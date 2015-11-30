@@ -3,23 +3,18 @@
 namespace SiteChecker;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RequestOptions;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
-use Spatie\Crawler\Crawler;
-use Spatie\Crawler\CrawlObserver;
-use Spatie\Crawler\CrawlProfile;
-use Spatie\Crawler\Url;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Class SiteChecker
  * @package SiteChecker
  */
-class SiteChecker implements CrawlObserver, CrawlProfile
+class SiteChecker
 {
-    /**
-     * @var \Spatie\Crawler\Crawler
-     */
-    protected $crawler;
 
     /**
      * @var array
@@ -27,30 +22,37 @@ class SiteChecker implements CrawlObserver, CrawlProfile
     protected $messages = [];
 
     /**
-     * @var string
+     * @var array
      */
-    protected $host;
+    protected $checkedUrls = [];
+
+    /**
+     * @var Url
+     */
+    protected $baseUrl;
 
     /**
      * @var LoggerInterface
      */
     protected $logger;
 
+    /**
+     * @var Client
+     */
+    protected $client;
+
 
     /**
      * SiteChecker constructor.
-     * @param \Spatie\Crawler\Crawler $crawler
+     * @param \GuzzleHttp\Client $client
      * @param \Psr\Log\LoggerInterface|null $logger
      */
-    public function __construct(
-      Crawler $crawler,
-      LoggerInterface $logger = null
-    ) {
-        $crawler->setCrawlObserver($this)
-          ->setCrawlProfile($this);
-        $this->crawler = $crawler;
+    public function __construct(Client $client, LoggerInterface $logger = null)
+    {
         $this->logger = $logger;
+        $this->client = $client;
     }
+
 
     /**
      * @param \Psr\Log\LoggerInterface|null $logger
@@ -62,9 +64,9 @@ class SiteChecker implements CrawlObserver, CrawlProfile
           RequestOptions::ALLOW_REDIRECTS => true,
           RequestOptions::COOKIES => true,
         ]);
-        $crawler = new Crawler($client);
 
-        return new static($crawler, $logger);
+
+        return new static($client, $logger);
     }
 
     /**
@@ -74,30 +76,99 @@ class SiteChecker implements CrawlObserver, CrawlProfile
      */
     public function check($baseUrl)
     {
-        $urlProperties = parse_url($baseUrl);
-        $this->host = $urlProperties['host'];
-
+        if (!$baseUrl instanceof Url) {
+            $baseUrl = new Url($baseUrl);
+        }
         $this->messages = [];
-        $this->crawler->startCrawling($baseUrl);
+        $this->baseUrl = $baseUrl;
+
+        $this->checkLink($baseUrl);
     }
 
     /**
-     * Called when the crawler will crawl the url.
-     *
-     * @param \Spatie\Crawler\Url $url
+     * @param Url $url
      */
-    public function willCrawl(Url $url)
+    protected function checkLink(Url $url)
     {
+        if (!$this->shouldBeChecked($url)) {
+            return;
+        }
 
+        try {
+            $response = $this->client->request('GET', (string)$url);
+        } catch (RequestException $exception) {
+            $response = $exception->getResponse();
+        }
+
+        $this->logResult($url, $response);
+
+        $this->checkedUrls[] = $url;
+
+        if (!$response) {
+            return;
+        }
+
+        if ($this->baseUrl->host === $url->host && $this->isHtmlPage($response)) {
+            $this->checkAllLinks($response->getBody()->getContents());
+        }
+
+    }
+
+    /**
+     * Crawl all links in the given html.
+     *
+     * @param string $html
+     */
+    protected function checkAllLinks($html)
+    {
+        //@todo: Add parent page here.
+        $allLinks = $this->getAllLinks($html);
+
+        /** @var Url $url */
+        foreach ($allLinks as $url) {
+            if (!$url->isEmailUrl()) {
+                $this->normalizeUrl($url);
+                if ($this->shouldBeChecked($url)) {
+                    $this->checkLink($url);
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Crawl all links in the given html.
+     *
+     * @param $html
+     * @return array
+     */
+    protected function getAllLinks($html)
+    {
+        $domCrawler = new Crawler($html);
+
+        $urls = $domCrawler->filterXpath('//a')
+          ->extract(['href']);
+        return array_map(function ($url) {
+            return Url::create($url);
+        }, $urls);
+    }
+
+    /**
+     * @param \Psr\Http\Message\ResponseInterface $response
+     * @return bool
+     */
+    protected function isHtmlPage(ResponseInterface $response)
+    {
+        return in_array('text/html', $response->getHeader('content-type'));
     }
 
     /**
      * Called when the crawler has crawled the given url.
      *
-     * @param \Spatie\Crawler\Url $url
+     * @param Url $url
      * @param \Psr\Http\Message\ResponseInterface|null $response
      */
-    public function hasBeenCrawled(Url $url, $response)
+    public function logResult(Url $url, $response)
     {
         $code = $response->getStatusCode();
         $message = 'Parsing ' . $url . '. Received code: ' . $code;
@@ -117,6 +188,24 @@ class SiteChecker implements CrawlObserver, CrawlProfile
     }
 
     /**
+     * @param \SiteChecker\Url $url
+     * @return bool
+     */
+    protected function shouldBeChecked(Url $url)
+    {
+        return !in_array((string)$url, $this->checkedUrls);
+    }
+
+    /**
+     * @param \SiteChecker\Url $url
+     * @return bool
+     */
+    protected function isAlreadyChecked(Url $url)
+    {
+        return in_array((string)$url, $this->checkedUrls);
+    }
+
+    /**
      * Called when the crawl has ended.
      */
     public function finishedCrawling()
@@ -125,22 +214,24 @@ class SiteChecker implements CrawlObserver, CrawlProfile
     }
 
     /**
-     * Crawl only links to existing site.
-     *
-     * @param \Spatie\Crawler\Url $url
-     *
-     * @return bool
+     * Normalize the given url.
+     * @param \SiteChecker\Url $url
+     * @return $this
      */
-    public function shouldCrawl(Url $url)
+    protected function normalizeUrl(Url $url)
     {
-        return $url->host == $this->host;
+        if ($url->isRelative()) {
+
+            $url->setScheme($this->baseUrl->scheme)
+              ->setHost($this->baseUrl->host)
+              ->setPort($this->baseUrl->port);
+        }
+
+        if ($url->isProtocolIndependent()) {
+            $url->setScheme($this->baseUrl->scheme);
+        }
+
+        return $url->removeFragment();
     }
 
-    /**
-     * @return array
-     */
-    public function getMessages()
-    {
-        return $this->messages;
-    }
 }

@@ -26,7 +26,9 @@ class CheckCommand extends Command
           ->setDefinition(array(
             new InputArgument('site', InputArgument::REQUIRED),
             new InputOption('check-external', 'ce', InputOption::VALUE_NONE,
-              'Site to crawl and check'),
+              'Check external links'),
+            new InputOption('log-all', 'la', InputOption::VALUE_NONE,
+              'Log successful page loads'),
           ))
           ->setHelp(<<<EOT
 Checks a site for broken links
@@ -47,12 +49,15 @@ EOT
 
         $site = $input->getArgument('site');
         $output->writeln('<header>Parsing ' . $site . '... </header>');
+        $verbosityLevelMap = [];
+        if ($input->getOption('log-all')) {
+            $verbosityLevelMap = array(
+              LogLevel::INFO => OutputInterface::VERBOSITY_NORMAL,
+            );
+        }
 
-        $verbosityLevelMap = array(
-          LogLevel::NOTICE => OutputInterface::VERBOSITY_NORMAL,
-          LogLevel::INFO => OutputInterface::VERBOSITY_NORMAL,
-        );
         $logger = new ConsoleLogger($output, $verbosityLevelMap);
+        // @todo: Implement "Check external" switch.
         $siteChecker = SiteChecker::create($logger);
         $siteChecker->check($site);
     }
