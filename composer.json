@@ -13,7 +13,7 @@
     "spatie/crawler": "^1.1",
     "symfony/console": "^2.7",
     "guzzlehttp/guzzle": "^6.1",
-    "monolog/monolog": "^1.17"
+    "psr/log": "^1.0"
   },
   "autoload": {
     "psr-4": {

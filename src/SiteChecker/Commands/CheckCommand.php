@@ -2,13 +2,15 @@
 
 namespace SiteChecker\Commands;
 
+use Psr\Log\LogLevel;
 use SiteChecker\SiteChecker;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
 /**
  * Class CheckCommand
@@ -44,13 +46,14 @@ EOT
         $output->getFormatter()->setStyle('header', $header_style);
 
         $site = $input->getArgument('site');
-        $siteChecker = SiteChecker::create();
-        $siteChecker->check($site);
-        $messages = $siteChecker->getMessages();
-        foreach ($messages as $message) {
-            $output->writeln($message);
-        }
+        $output->writeln('<header>Parsing ' . $site . '... </header>');
 
-        $output->writeln('<header>Site = ' . $site . ' </header>');
+        $verbosityLevelMap = array(
+          LogLevel::NOTICE => OutputInterface::VERBOSITY_NORMAL,
+          LogLevel::INFO => OutputInterface::VERBOSITY_NORMAL,
+        );
+        $logger = new ConsoleLogger($output, $verbosityLevelMap);
+        $siteChecker = SiteChecker::create($logger);
+        $siteChecker->check($site);
     }
 }

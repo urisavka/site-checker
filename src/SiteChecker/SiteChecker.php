@@ -4,8 +4,7 @@ namespace SiteChecker;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
+use Psr\Log\LoggerInterface;
 use Spatie\Crawler\Crawler;
 use Spatie\Crawler\CrawlObserver;
 use Spatie\Crawler\CrawlProfile;
@@ -33,31 +32,39 @@ class SiteChecker implements CrawlObserver, CrawlProfile
     protected $host;
 
     /**
-     * @var Logger
+     * @var LoggerInterface
      */
     protected $logger;
 
 
-    public function __construct(Crawler $crawler)
-    {
+    /**
+     * SiteChecker constructor.
+     * @param \Spatie\Crawler\Crawler $crawler
+     * @param \Psr\Log\LoggerInterface|null $logger
+     */
+    public function __construct(
+      Crawler $crawler,
+      LoggerInterface $logger = null
+    ) {
         $crawler->setCrawlObserver($this)
           ->setCrawlProfile($this);
         $this->crawler = $crawler;
-        $this->logger = new Logger('site-checker-responses');
-        $this->logger->pushHandler(new StreamHandler('log/parsing.log', Logger::INFO));
+        $this->logger = $logger;
     }
 
     /**
+     * @param \Psr\Log\LoggerInterface|null $logger
      * @return static
      */
-    public static function create()
+    public static function create(LoggerInterface $logger = null)
     {
         $client = new Client([
           RequestOptions::ALLOW_REDIRECTS => true,
           RequestOptions::COOKIES => true,
         ]);
         $crawler = new Crawler($client);
-        return new static($crawler);
+
+        return new static($crawler, $logger);
     }
 
     /**
@@ -92,13 +99,21 @@ class SiteChecker implements CrawlObserver, CrawlProfile
      */
     public function hasBeenCrawled(Url $url, $response)
     {
-        $message = 'Parsing ' . $url . '. Received code: ' . $response->getStatusCode();
+        $code = $response->getStatusCode();
+        $message = 'Parsing ' . $url . '. Received code: ' . $code;
         $this->messages[] = $message;
-        $this->logResult($message);
-    }
-
-    protected function logResult($message) {
-        $this->logger->addInfo($message);
+        switch ($response->getStatusCode()) {
+            case 404:
+            case 403:
+                $this->logger->error($message);
+                break;
+            case 301:
+                $this->logger->warning($message);
+                break;
+            default:
+                $this->logger->info($message);
+                break;
+        }
     }
 
     /**
@@ -106,7 +121,7 @@ class SiteChecker implements CrawlObserver, CrawlProfile
      */
     public function finishedCrawling()
     {
-        $this->logger->addInfo("Crawling was finished");
+        $this->logger->info("Crawling was finished");
     }
 
     /**
