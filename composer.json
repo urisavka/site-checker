@@ -1,0 +1,24 @@
+{
+  "name": "urisavka/site_checker",
+  "description": "Check site for broken links and moved/deleted files",
+  "minimum-stability": "stable",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Yurii Savka",
+      "email": "urisavka@gmail.com"
+    }
+  ],
+  "require": {
+    "spatie/crawler": "^1.1",
+    "symfony/console": "^2.7",
+    "guzzlehttp/guzzle": "^6.1",
+    "monolog/monolog": "^1.17"
+  },
+  "autoload": {
+    "psr-4": {
+      "": "src/"
+    }
+  }
+
+}
