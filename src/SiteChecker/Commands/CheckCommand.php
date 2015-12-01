@@ -34,7 +34,7 @@ class CheckCommand extends Command
               'Show full html tag of element in log'),
           ])
           ->setHelp(<<<EOT
-Checks a site for broken links
+Checks a site for broken links and missing files (CSS, js, images)
 
 Usage:
 
@@ -71,7 +71,7 @@ EOT
             }
 
             if ($input->getOption('check-external')) {
-                $config->checkExternal = false;
+                $config->checkExternal = true;
             }
 
             if ($input->getOption('full-html')) {

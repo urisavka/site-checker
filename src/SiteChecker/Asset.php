@@ -2,8 +2,18 @@
 
 namespace SiteChecker;
 
-class Link
+/**
+ * General class for pages, CSS, JS, images and whatever that can be downloaded.
+ * Class Asset
+ * @package SiteChecker
+ */
+class Asset
 {
+
+
+    public static $CODES_ERROR = [404, 403];
+    public static $CODES_WARNING = [301];
+
     /**
      * @var null|string
      */
@@ -25,7 +35,7 @@ class Link
     public $path;
 
     /**
-     * @var Link
+     * @var Asset
      */
     public $parentPage;
 
@@ -35,13 +45,24 @@ class Link
     private $fullHtml;
 
     /**
-     * Link constructor.
+     * @var string
+     */
+    private $responseCode;
+
+    /**
+     * @var string
+     */
+    private $type;
+
+
+    /**
+     * Asset constructor.
      *
      * @param string $url
-     * @param Link $parentPage
+     * @param Asset $parentPage
      * @param $fullHtml
      */
-    public function __construct($url, $parentPage = null, $fullHtml = '')
+    public function __construct($url, $parentPage = null, $fullHtml = '', $type ='page')
     {
         $urlProperties = parse_url($url);
 
@@ -52,6 +73,7 @@ class Link
         }
         $this->parentPage = $parentPage;
         $this->fullHtml = $fullHtml;
+        $this->type = $type;
     }
 
     /**
@@ -126,7 +148,7 @@ class Link
     }
 
     /**
-     * @return Link
+     * @return Asset
      */
     public function getParentPage()
     {
@@ -134,11 +156,28 @@ class Link
     }
 
     /**
-     * @param Link $parentPage
+     * @param Asset $parentPage
      */
     public function setParentPage($parentPage)
     {
         $this->parentPage = $parentPage;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getResponseCode()
+    {
+        return $this->responseCode;
+    }
+
+    /**
+     * @param string $responseCode
+     */
+    public function setResponseCode($responseCode)
+    {
+        $this->responseCode = $responseCode;
     }
 
     /**
@@ -172,8 +211,10 @@ class Link
     /**
      * @return string
      */
-    public function getURL() {
-        $path = strpos($this->path, '/') === 0 ? substr($this->path, 1) : $this->path;
+    public function getURL()
+    {
+        $path = strpos($this->path, '/') === 0 ? substr($this->path,
+          1) : $this->path;
 
         $port = ($this->port === 80 ? '' : ":{$this->port}");
 
@@ -188,5 +229,23 @@ class Link
     public function __toString()
     {
         return $this->getURL();
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSuccessful()
+    {
+        return !$this->isError();
+    }
+
+    public function isError()
+    {
+        return in_array($this->responseCode, self::$CODES_ERROR);
+    }
+
+    public function isWarning()
+    {
+        return in_array($this->responseCode, self::$CODES_WARNING);
     }
 }

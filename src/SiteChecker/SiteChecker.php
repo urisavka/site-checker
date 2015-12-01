@@ -16,23 +16,20 @@ use Symfony\Component\DomCrawler\Crawler;
 class SiteChecker
 {
 
-    public static $CODES_ERROR = [404, 403];
-    public static $CODES_WARNING = [301];
-
     /**
      * @var array
      */
     protected $messages = [];
 
     /**
-     * @var array
+     * @var Asset[]
      */
-    protected $checkedUrls = [];
+    protected $checkedAssets = [];
 
     /**
-     * @var Link
+     * @var Asset
      */
-    protected $baseUrl;
+    protected $basePage;
 
     /**
      * @var LoggerInterface
@@ -95,71 +92,81 @@ class SiteChecker
     }
 
     /**
-     * Check the site for broken links.
+     * Check the site for broken assets.
      *
      * @param string $baseUrl
      */
     public function check($baseUrl)
     {
-        if (!$baseUrl instanceof Link) {
-            $baseUrl = new Link($baseUrl);
+        if (!$baseUrl instanceof Asset) {
+            $baseUrl = new Asset($baseUrl);
         }
         $this->messages = [];
-        $this->baseUrl = $baseUrl;
+        $this->basePage = $baseUrl;
 
-        $this->checkLink($baseUrl);
+        $this->checkAsset($baseUrl);
+        $this->checkResults();
     }
 
+
     /**
-     * @param Link $link
+     * @param Asset $asset
      */
-    protected function checkLink(Link $link)
+    protected function checkAsset(Asset $asset)
     {
-        if (!$this->shouldBeChecked($link)) {
+        if (!$this->shouldBeChecked($asset)) {
             return;
         }
 
         try {
-            $response = $this->client->request('GET', $link->getURL());
+            $response = $this->client->request('GET', $asset->getURL());
         } catch (RequestException $exception) {
             $response = $exception->getResponse();
         }
 
-        $this->logResult($link, $response);
+        if ($response) {
+            $asset->setResponseCode($response->getStatusCode());
+        }
 
-        $this->checkedUrls[] = $link;
+        $this->logResult($asset);
+
+        $this->checkedAssets[] = $asset;
 
         if (!$response) {
             return;
         }
 
-        if (!$this->isExternal($link) && $this->isHtmlPage($response)) {
-            $this->checkAllLinks($response->getBody()->getContents(), $link);
+        if (!$this->isExternal($asset) && $this->isHtmlPage($response)) {
+            $this->checkAllAssets($response->getBody()->getContents(), $asset);
         }
 
     }
 
-    protected function isExternal(Link $link)
+    /**
+     * @param Asset $asset
+     * @return bool
+     */
+    protected function isExternal(Asset $asset)
     {
-        return $this->baseUrl->host !== $link->host;
+        return $this->basePage->host !== $asset->host;
     }
 
     /**
-     * Crawl all links in the given html.
+     * Crawl all assets in the given html.
      *
      * @param string $html
-     * @param $parentLink
+     * @param Asset $parentAsset
      */
-    protected function checkAllLinks($html, $parentLink)
+    protected function checkAllAssets($html, $parentAsset)
     {
-        $allLinks = $this->getAllLinks($html, $parentLink);
+        $allAssets = $this->getAllAssets($html, $parentAsset);
 
-        /** @var Link $link */
-        foreach ($allLinks as $link) {
-            if (!$link->isEmailUrl()) {
-                $this->normalizeUrl($link);
-                if ($this->shouldBeChecked($link)) {
-                    $this->checkLink($link);
+        /** @var Asset $asset */
+        foreach ($allAssets as $asset) {
+            if (!$asset->isEmailUrl()) {
+                $this->normalizeUrl($asset);
+                if ($this->shouldBeChecked($asset)) {
+                    $this->checkAsset($asset);
                 }
             }
         }
@@ -167,68 +174,91 @@ class SiteChecker
     }
 
     /**
-     * Crawl all links in the given html.
+     * Crawl all assets in the given html.
      *
      * @param $html
      * @param $parentPage
      * @return array
      */
-    protected function getAllLinks($html, $parentPage)
+    protected function getAllAssets($html, $parentPage)
     {
-        $links = [];
+        $assets = [];
 
-        $links = array_merge(
-          $links,
-          $this->createLinksFromDOMElements($html, '//a', 'href',
-            $parentPage)
+        $assets = array_merge(
+          $assets,
+          $this->createAssetsFromDOMElements(
+            $html, '//a', 'href', 'page', $parentPage
+          )
         );
 
         if ($this->config->checkImages) {
-            $links = array_merge(
-              $links,
-              $this->createLinksFromDOMElements($html, '//img', 'src',
-                $parentPage)
+            $assets = array_merge(
+              $assets,
+              $this->createAssetsFromDOMElements(
+                $html, '//img', 'src', 'css file', $parentPage
+              )
             );
         }
 
         if ($this->config->checkJS) {
-            $links = array_merge(
-              $links,
-              $this->createLinksFromDOMElements($html, '//script', 'src',
-                $parentPage)
+            $assets = array_merge(
+              $assets,
+              $this->createAssetsFromDOMElements(
+                $html, '//script', 'src','js file', $parentPage
+              )
             );
         }
 
-        return $links;
+        if ($this->config->checkCSS) {
+            $assets = array_merge(
+              $assets,
+              $this->createAssetsFromDOMElements(
+                $html, '//link[@rel="stylesheet"]', 'href', 'image', $parentPage
+              )
+            );
+        }
+
+        return $assets;
     }
 
     /**
      * @param $html
      * @param $selector
      * @param $urlAttribute
+     * @param $type
      * @param $parentPage
      * @return array
      */
-    protected function createLinksFromDOMElements(
+    protected function createAssetsFromDOMElements(
       $html,
       $selector,
       $urlAttribute,
+      $type,
       $parentPage
     ) {
-        $links = [];
+        $assets = [];
 
         $crawler = new Crawler($html);
         $elements = $crawler->filterXpath($selector);
-        /** @var \DOMElement $linkElement */
+
+        /** @var \DOMElement $assetElement */
         foreach ($elements as $element) {
             if (!empty($element->getAttribute($urlAttribute))) {
-                $links[] = new Link(
-                  $element->getAttribute($urlAttribute), $parentPage,
-                  $element->ownerDocument->saveHTML($element)
+                $urlValue = $element->getAttribute($urlAttribute);
+                if ($this->config->ignoreWhiteSpaces) {
+                    $urlValue = trim($urlValue);
+                }
+
+                $assets[] = new Asset(
+                  $urlValue,
+                  $parentPage,
+                  $element->ownerDocument->saveHTML($element),
+                  $type
                 );
             }
         }
-        return $links;
+
+        return $assets;
     }
 
     /**
@@ -243,29 +273,29 @@ class SiteChecker
     /**
      * Called when the crawler has crawled the given url.
      *
-     * @param Link $link
-     * @param \Psr\Http\Message\ResponseInterface|null $response
+     * @param Asset $asset
      */
-    public function logResult(Link $link, $response)
+    public function logResult($asset)
     {
-        $code = $response->getStatusCode();
-        $messages = ['Checking'];
-        if ($this->isExternal($link)) {
-            $messages [] = 'external';
+        $code = $asset->getResponseCode();
+        $messageParts = ['Checking'];
+        if ($this->isExternal($asset)) {
+            $messageParts[] = 'external';
         }
-        $messages [] = 'resource: ' . $link->getURL();
-        if ($parent = $link->getParentPage()) {
-            $messages [] = 'on a page: ' . $parent->getURL() . '.';
+        $messageParts[] = 'asset: ' . $asset->getURL();
+        if ($parent = $asset->getParentPage()) {
+            $messageParts[] = 'on a page: ' . $parent->getURL() . '.';
         }
-        if ($this->config->showFullTags && $html = $link->getFullHtml()) {
-            $messages [] = 'Full html of it is: ' . $html . '.';
+        if ($this->config->showFullTags && $html = $asset->getFullHtml()) {
+            $messageParts[] = 'Full html of it is: ' . $html . '.';
         }
-        $messages [] = 'Received code: ' . $code;
-        $message = implode(' ', $messages);
+        $messageParts[] = 'Received code: ' . $code;
+        $message = implode(' ', $messageParts);
+
         $this->messages[] = $message;
-        if (in_array($code, self::$CODES_ERROR)) {
+        if ($asset->isError()) {
             $this->logger->error($message);
-        } elseif (in_array($code, self::$CODES_WARNING)) {
+        } elseif ($asset->isWarning()) {
             $this->logger->warning($message);
         } else {
             $this->logger->info($message);
@@ -273,50 +303,69 @@ class SiteChecker
     }
 
     /**
-     * @param \SiteChecker\Link $link
+     * @param Asset $asset
      * @return bool
      */
-    protected function shouldBeChecked(Link $link)
+    protected function shouldBeChecked(Asset $asset)
     {
-        return !in_array($link->getUrl(), $this->checkedUrls);
+        if (!$this->config->checkExternal && $this->isExternal($asset)) {
+            return false;
+        }
+        return !in_array($asset->getUrl(), $this->checkedAssets);
     }
 
     /**
-     * @param \SiteChecker\Link $link
+     * @param \SiteChecker\Asset $asset
      * @return bool
      */
-    protected function isAlreadyChecked(Link $link)
+    protected function isAlreadyChecked(Asset $asset)
     {
-        return in_array($link->getURL(), $this->checkedUrls);
+        return in_array($asset->getURL(), $this->checkedAssets);
     }
 
     /**
      * Called when the crawl has ended.
      */
-    public function finishedCrawling()
+    public function checkResults()
     {
-        $this->logger->info("Crawling was finished");
+        $this->logger->info("Check is finished. Here are the results:");
+        $successCount = 0;
+        $failedCount = 0;
+
+        foreach ($this->checkedAssets as $asset) {
+            if ($asset->isSuccessful()) {
+                $successCount++;
+            } else {
+                $failedCount++;
+            }
+        }
+        if ($successCount) {
+            $this->logger->info('Successful: ' . $successCount);
+        }
+        if ($failedCount) {
+            $this->logger->error('Failed: ' . $failedCount);
+        }
     }
 
     /**
      * Normalize the given url.
-     * @param \SiteChecker\Link $link
+     * @param \SiteChecker\Asset $asset
      * @return $this
      */
-    protected function normalizeUrl(Link $link)
+    protected function normalizeUrl(Asset $asset)
     {
-        if ($link->isRelative()) {
+        if ($asset->isRelative()) {
 
-            $link->setScheme($this->baseUrl->scheme)
-              ->setHost($this->baseUrl->host)
-              ->setPort($this->baseUrl->port);
+            $asset->setScheme($this->basePage->scheme)
+              ->setHost($this->basePage->host)
+              ->setPort($this->basePage->port);
         }
 
-        if ($link->isProtocolIndependent()) {
-            $link->setScheme($this->baseUrl->scheme);
+        if ($asset->isProtocolIndependent()) {
+            $asset->setScheme($this->basePage->scheme);
         }
 
-        return $link->removeFragment();
+        return $asset->removeFragment();
     }
 
 }

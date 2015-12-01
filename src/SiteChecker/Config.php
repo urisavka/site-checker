@@ -20,4 +20,7 @@ class Config
     public $showFullTags = false;
     public $showOnlyProblems = false;
     public $checkExternal = false;
+    // It's not okay to have links with whitespaces, but browsers
+    // usually fix it, so let's ignore it in most cases
+    public $ignoreWhiteSpaces = true;
 }
