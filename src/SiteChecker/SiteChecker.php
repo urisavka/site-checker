@@ -16,6 +16,9 @@ use Symfony\Component\DomCrawler\Crawler;
 class SiteChecker
 {
 
+    public static $CODES_ERROR = [404, 403];
+    public static $CODES_WARNING = [301];
+
     /**
      * @var array
      */
@@ -41,6 +44,27 @@ class SiteChecker
      */
     protected $client;
 
+    /**
+     * @var Config
+     */
+    protected $config;
+
+
+    /**
+     * @return Config
+     */
+    public function getConfig()
+    {
+        return $this->config;
+    }
+
+    /**
+     * @param Config $config
+     */
+    public function setConfig($config)
+    {
+        $this->config = $config;
+    }
 
     /**
      * SiteChecker constructor.
@@ -51,6 +75,7 @@ class SiteChecker
     {
         $this->logger = $logger;
         $this->client = $client;
+        $this->config = new Config();
     }
 
 
@@ -108,10 +133,15 @@ class SiteChecker
             return;
         }
 
-        if ($this->baseUrl->host === $link->host && $this->isHtmlPage($response)) {
+        if (!$this->isExternal($link) && $this->isHtmlPage($response)) {
             $this->checkAllLinks($response->getBody()->getContents(), $link);
         }
 
+    }
+
+    protected function isExternal(Link $link)
+    {
+        return $this->baseUrl->host !== $link->host;
     }
 
     /**
@@ -147,11 +177,16 @@ class SiteChecker
     {
         $domCrawler = new Crawler($html);
 
-        $urls = $domCrawler->filterXpath('//a')
-          ->extract(['href']);
-        return array_map(function ($url) use ($parentPage) {
-            return new Link($url, $parentPage);
-        }, $urls);
+        $linkElements = $domCrawler->filterXpath('//a');
+        $links = [];
+        /** @var \DOMElement $linkElement */
+        foreach ($linkElements as $linkElement) {
+            $links[] = new Link(
+              $linkElement->getAttribute('href'), $parentPage,
+              $linkElement->ownerDocument->saveHTML($linkElement)
+            );
+        }
+        return $links;
     }
 
     /**
@@ -172,23 +207,26 @@ class SiteChecker
     public function logResult(Link $link, $response)
     {
         $code = $response->getStatusCode();
-        $message = 'Parsing ' . $link->getURL();
-        if ($parent = $link->getParentPage()) {
-            $message .= ' on a page: ' . $parent->getURL() . '.';
+        $messages = ['Checking'];
+        if ($this->isExternal($link)) {
+            $messages [] = 'external';
         }
-        $message .= ' Received code: ' . $code;
+        $messages [] = 'resource:' . $link->getURL();
+        if ($parent = $link->getParentPage()) {
+            $messages [] = 'on a page: ' . $parent->getURL() . '.';
+        }
+        if ($this->config->showFullTags && $html = $link->getFullHtml()) {
+            $messages [] = 'Full html of it is: ' . $html . '.';
+        }
+        $messages [] = 'Received code: ' . $code;
+        $message = implode(' ', $messages);
         $this->messages[] = $message;
-        switch ($response->getStatusCode()) {
-            case 404:
-            case 403:
-                $this->logger->error($message);
-                break;
-            case 301:
-                $this->logger->warning($message);
-                break;
-            default:
-                $this->logger->info($message);
-                break;
+        if (in_array($code, self::$CODES_ERROR)) {
+            $this->logger->error($message);
+        } elseif (in_array($code, self::$CODES_WARNING)) {
+            $this->logger->warning($message);
+        } else {
+            $this->logger->info($message);
         }
     }
 

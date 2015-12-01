@@ -30,12 +30,18 @@ class Link
     public $parentPage;
 
     /**
-     * Url constructor.
+     * @var string
+     */
+    private $fullHtml;
+
+    /**
+     * Link constructor.
      *
      * @param string $url
      * @param Link $parentPage
+     * @param $fullHtml
      */
-    public function __construct($url, $parentPage = null)
+    public function __construct($url, $parentPage = null, $fullHtml = '')
     {
         $urlProperties = parse_url($url);
 
@@ -45,6 +51,7 @@ class Link
             }
         }
         $this->parentPage = $parentPage;
+        $this->fullHtml = $fullHtml;
     }
 
     /**
@@ -144,6 +151,22 @@ class Link
         $this->path = explode('#', $this->path)[0];
 
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFullHtml()
+    {
+        return $this->fullHtml;
+    }
+
+    /**
+     * @param string $fullHtml
+     */
+    public function setFullHtml($fullHtml)
+    {
+        $this->fullHtml = $fullHtml;
     }
 
     /**

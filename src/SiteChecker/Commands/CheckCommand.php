@@ -3,6 +3,7 @@
 namespace SiteChecker\Commands;
 
 use Psr\Log\LogLevel;
+use SiteChecker\Config;
 use SiteChecker\SiteChecker;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
@@ -23,13 +24,15 @@ class CheckCommand extends Command
     {
         $this->setName("site-checker:check")
           ->setDescription("Display the fibonacci numbers between 2 given numbers")
-          ->setDefinition(array(
+          ->setDefinition([
             new InputArgument('site', InputArgument::REQUIRED),
-            new InputOption('check-external', 'ce', InputOption::VALUE_NONE,
+            new InputOption('check-external', 'e', InputOption::VALUE_NONE,
               'Check external links'),
-            new InputOption('log-all', 'la', InputOption::VALUE_NONE,
+            new InputOption('log-success', 's', InputOption::VALUE_NONE,
               'Log successful page loads'),
-          ))
+            new InputOption('full-html', 'f', InputOption::VALUE_NONE,
+              'Show full html tag of element in log'),
+          ])
           ->setHelp(<<<EOT
 Checks a site for broken links
 
@@ -48,17 +51,34 @@ EOT
         $output->getFormatter()->setStyle('header', $header_style);
 
         $site = $input->getArgument('site');
-        $output->writeln('<header>Parsing ' . $site . '... </header>');
+        $output->writeln('<header>Checking ' . $site . '... </header>');
+
         $verbosityLevelMap = [];
-        if ($input->getOption('log-all')) {
+        if ($input->getOption('log-success')) {
             $verbosityLevelMap = array(
               LogLevel::INFO => OutputInterface::VERBOSITY_NORMAL,
             );
         }
 
         $logger = new ConsoleLogger($output, $verbosityLevelMap);
-        // @todo: Implement "Check external" switch.
         $siteChecker = SiteChecker::create($logger);
+
+        if ($input->getOptions()) {
+            $config = new Config();
+
+            if ($input->getOption('log-success')) {
+                $config->showOnlyProblems = false;
+            }
+
+            if ($input->getOption('check-external')) {
+                $config->checkExternal = false;
+            }
+
+            if ($input->getOption('full-html')) {
+                $config->showFullTags = true;
+            }
+            $siteChecker->setConfig($config);
+        }
         $siteChecker->check($site);
     }
 }
