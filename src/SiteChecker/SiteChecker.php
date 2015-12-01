@@ -175,16 +175,58 @@ class SiteChecker
      */
     protected function getAllLinks($html, $parentPage)
     {
-        $domCrawler = new Crawler($html);
-
-        $linkElements = $domCrawler->filterXpath('//a');
         $links = [];
-        /** @var \DOMElement $linkElement */
-        foreach ($linkElements as $linkElement) {
-            $links[] = new Link(
-              $linkElement->getAttribute('href'), $parentPage,
-              $linkElement->ownerDocument->saveHTML($linkElement)
+
+        $links = array_merge(
+          $links,
+          $this->createLinksFromDOMElements($html, '//a', 'href',
+            $parentPage)
+        );
+
+        if ($this->config->checkImages) {
+            $links = array_merge(
+              $links,
+              $this->createLinksFromDOMElements($html, '//img', 'src',
+                $parentPage)
             );
+        }
+
+        if ($this->config->checkJS) {
+            $links = array_merge(
+              $links,
+              $this->createLinksFromDOMElements($html, '//script', 'src',
+                $parentPage)
+            );
+        }
+
+        return $links;
+    }
+
+    /**
+     * @param $html
+     * @param $selector
+     * @param $urlAttribute
+     * @param $parentPage
+     * @return array
+     */
+    protected function createLinksFromDOMElements(
+      $html,
+      $selector,
+      $urlAttribute,
+      $parentPage
+    ) {
+        $links = [];
+
+        $crawler = new Crawler($html);
+        $elements = $crawler->filterXpath($selector);
+        /** @var \DOMElement $linkElement */
+        foreach ($elements as $element) {
+            if (!empty($element->getAttribute($urlAttribute))) {
+                $links[] = new Link(
+                  $element->getAttribute($urlAttribute), $parentPage,
+                  $element->ownerDocument->saveHTML($element)
+                );
+            }
         }
         return $links;
     }
@@ -211,7 +253,7 @@ class SiteChecker
         if ($this->isExternal($link)) {
             $messages [] = 'external';
         }
-        $messages [] = 'resource:' . $link->getURL();
+        $messages [] = 'resource: ' . $link->getURL();
         if ($parent = $link->getParentPage()) {
             $messages [] = 'on a page: ' . $parent->getURL() . '.';
         }
