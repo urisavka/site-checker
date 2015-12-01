@@ -27,7 +27,7 @@ class SiteChecker
     protected $checkedUrls = [];
 
     /**
-     * @var Url
+     * @var Link
      */
     protected $baseUrl;
 
@@ -76,8 +76,8 @@ class SiteChecker
      */
     public function check($baseUrl)
     {
-        if (!$baseUrl instanceof Url) {
-            $baseUrl = new Url($baseUrl);
+        if (!$baseUrl instanceof Link) {
+            $baseUrl = new Link($baseUrl);
         }
         $this->messages = [];
         $this->baseUrl = $baseUrl;
@@ -86,30 +86,30 @@ class SiteChecker
     }
 
     /**
-     * @param Url $url
+     * @param Link $link
      */
-    protected function checkLink(Url $url)
+    protected function checkLink(Link $link)
     {
-        if (!$this->shouldBeChecked($url)) {
+        if (!$this->shouldBeChecked($link)) {
             return;
         }
 
         try {
-            $response = $this->client->request('GET', (string)$url);
+            $response = $this->client->request('GET', $link->getURL());
         } catch (RequestException $exception) {
             $response = $exception->getResponse();
         }
 
-        $this->logResult($url, $response);
+        $this->logResult($link, $response);
 
-        $this->checkedUrls[] = $url;
+        $this->checkedUrls[] = $link;
 
         if (!$response) {
             return;
         }
 
-        if ($this->baseUrl->host === $url->host && $this->isHtmlPage($response)) {
-            $this->checkAllLinks($response->getBody()->getContents());
+        if ($this->baseUrl->host === $link->host && $this->isHtmlPage($response)) {
+            $this->checkAllLinks($response->getBody()->getContents(), $link);
         }
 
     }
@@ -118,18 +118,18 @@ class SiteChecker
      * Crawl all links in the given html.
      *
      * @param string $html
+     * @param $parentLink
      */
-    protected function checkAllLinks($html)
+    protected function checkAllLinks($html, $parentLink)
     {
-        //@todo: Add parent page here.
-        $allLinks = $this->getAllLinks($html);
+        $allLinks = $this->getAllLinks($html, $parentLink);
 
-        /** @var Url $url */
-        foreach ($allLinks as $url) {
-            if (!$url->isEmailUrl()) {
-                $this->normalizeUrl($url);
-                if ($this->shouldBeChecked($url)) {
-                    $this->checkLink($url);
+        /** @var Link $link */
+        foreach ($allLinks as $link) {
+            if (!$link->isEmailUrl()) {
+                $this->normalizeUrl($link);
+                if ($this->shouldBeChecked($link)) {
+                    $this->checkLink($link);
                 }
             }
         }
@@ -140,16 +140,17 @@ class SiteChecker
      * Crawl all links in the given html.
      *
      * @param $html
+     * @param $parentPage
      * @return array
      */
-    protected function getAllLinks($html)
+    protected function getAllLinks($html, $parentPage)
     {
         $domCrawler = new Crawler($html);
 
         $urls = $domCrawler->filterXpath('//a')
           ->extract(['href']);
-        return array_map(function ($url) {
-            return Url::create($url);
+        return array_map(function ($url) use ($parentPage) {
+            return new Link($url, $parentPage);
         }, $urls);
     }
 
@@ -165,13 +166,17 @@ class SiteChecker
     /**
      * Called when the crawler has crawled the given url.
      *
-     * @param Url $url
+     * @param Link $link
      * @param \Psr\Http\Message\ResponseInterface|null $response
      */
-    public function logResult(Url $url, $response)
+    public function logResult(Link $link, $response)
     {
         $code = $response->getStatusCode();
-        $message = 'Parsing ' . $url . '. Received code: ' . $code;
+        $message = 'Parsing ' . $link->getURL();
+        if ($parent = $link->getParentPage()) {
+            $message .= ' on a page: ' . $parent->getURL() . '.';
+        }
+        $message .= ' Received code: ' . $code;
         $this->messages[] = $message;
         switch ($response->getStatusCode()) {
             case 404:
@@ -188,21 +193,21 @@ class SiteChecker
     }
 
     /**
-     * @param \SiteChecker\Url $url
+     * @param \SiteChecker\Link $link
      * @return bool
      */
-    protected function shouldBeChecked(Url $url)
+    protected function shouldBeChecked(Link $link)
     {
-        return !in_array((string)$url, $this->checkedUrls);
+        return !in_array($link->getUrl(), $this->checkedUrls);
     }
 
     /**
-     * @param \SiteChecker\Url $url
+     * @param \SiteChecker\Link $link
      * @return bool
      */
-    protected function isAlreadyChecked(Url $url)
+    protected function isAlreadyChecked(Link $link)
     {
-        return in_array((string)$url, $this->checkedUrls);
+        return in_array($link->getURL(), $this->checkedUrls);
     }
 
     /**
@@ -215,23 +220,23 @@ class SiteChecker
 
     /**
      * Normalize the given url.
-     * @param \SiteChecker\Url $url
+     * @param \SiteChecker\Link $link
      * @return $this
      */
-    protected function normalizeUrl(Url $url)
+    protected function normalizeUrl(Link $link)
     {
-        if ($url->isRelative()) {
+        if ($link->isRelative()) {
 
-            $url->setScheme($this->baseUrl->scheme)
+            $link->setScheme($this->baseUrl->scheme)
               ->setHost($this->baseUrl->host)
               ->setPort($this->baseUrl->port);
         }
 
-        if ($url->isProtocolIndependent()) {
-            $url->setScheme($this->baseUrl->scheme);
+        if ($link->isProtocolIndependent()) {
+            $link->setScheme($this->baseUrl->scheme);
         }
 
-        return $url->removeFragment();
+        return $link->removeFragment();
     }
 
 }

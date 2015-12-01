@@ -2,9 +2,8 @@
 
 namespace SiteChecker;
 
-class Url
+class Link
 {
-    // @todo: Add Base page here.
     /**
      * @var null|string
      */
@@ -26,21 +25,17 @@ class Url
     public $path;
 
     /**
-     * @param $url
-     *
-     * @return static
+     * @var Link
      */
-    public static function create($url)
-    {
-        return new static($url);
-    }
+    public $parentPage;
 
     /**
      * Url constructor.
      *
-     * @param $url
+     * @param string $url
+     * @param Link $parentPage
      */
-    public function __construct($url)
+    public function __construct($url, $parentPage = null)
     {
         $urlProperties = parse_url($url);
 
@@ -49,6 +44,7 @@ class Url
                 $this->$property = $urlProperties[$property];
             }
         }
+        $this->parentPage = $parentPage;
     }
 
     /**
@@ -123,6 +119,22 @@ class Url
     }
 
     /**
+     * @return Link
+     */
+    public function getParentPage()
+    {
+        return $this->parentPage;
+    }
+
+    /**
+     * @param Link $parentPage
+     */
+    public function setParentPage($parentPage)
+    {
+        $this->parentPage = $parentPage;
+    }
+
+    /**
      * Remove the fragment.
      *
      * @return $this
@@ -135,16 +147,23 @@ class Url
     }
 
     /**
+     * @return string
+     */
+    public function getURL() {
+        $path = strpos($this->path, '/') === 0 ? substr($this->path, 1) : $this->path;
+
+        $port = ($this->port === 80 ? '' : ":{$this->port}");
+
+        return "{$this->scheme}://{$this->host}{$port}/{$path}";
+    }
+
+    /**
      * Convert the url to string.
      *
      * @return string
      */
     public function __toString()
     {
-        $path = strpos($this->path, '/') === 0 ? substr($this->path, 1) : $this->path;
-
-        $port = ($this->port === 80 ? '' : ":{$this->port}");
-
-        return "{$this->scheme}://{$this->host}{$port}/{$path}";
+        return $this->getURL();
     }
 }
