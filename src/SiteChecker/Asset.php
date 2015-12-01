@@ -11,7 +11,7 @@ class Asset
 {
 
 
-    public static $CODES_ERROR = [404, 403];
+    public static $CODES_ERROR = [404, 403, 500, 503];
     public static $CODES_WARNING = [301];
 
     /**

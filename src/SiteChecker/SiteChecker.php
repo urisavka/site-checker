@@ -122,6 +122,7 @@ class SiteChecker
             $response = $this->client->request('GET', $asset->getURL());
         } catch (RequestException $exception) {
             $response = $exception->getResponse();
+            $asset->setResponseCode('500');
         }
 
         if ($response) {
@@ -267,7 +268,12 @@ class SiteChecker
      */
     protected function isHtmlPage(ResponseInterface $response)
     {
-        return in_array('text/html', $response->getHeader('content-type'));
+        foreach ($response->getHeader('content-type') as $header) {
+            if (stristr($header, 'text/html') !== FALSE) {
+                return true;
+            }
+        }
+        return FALSE;
     }
 
     /**
