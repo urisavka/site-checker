@@ -13,7 +13,8 @@
     "symfony/console": "^2.7",
     "guzzlehttp/guzzle": "^6.1",
     "psr/log": "^1.0",
-    "symfony/dom-crawler": "^2.7"
+    "symfony/dom-crawler": "^2.7",
+    "hassankhan/config": "^0.8.2"
   },
   "autoload": {
     "psr-4": {

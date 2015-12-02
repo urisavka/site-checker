@@ -7,6 +7,9 @@
 
 namespace SiteChecker;
 
+use GuzzleHttp\Cookie\SetCookie;
+
+
 /**
  * Class Config
  * @package SiteChecker
@@ -20,7 +23,27 @@ class Config
     public $showFullTags = false;
     public $showOnlyProblems = false;
     public $checkExternal = false;
-    // It's not okay to have links with whitespaces, but browsers
-    // usually fix it, so let's ignore it in most cases
+    /**
+     * It's not okay to have links with whitespaces, but browsers
+     * usually fix it, so let's ignore it in most cases
+     */
     public $ignoreWhiteSpaces = true;
+    public $cookies = [];
+
+    /**
+     * @return array
+     */
+    public function getCookies()
+    {
+        $cookies = [];
+        // Ensure proper cookie format
+        foreach ($this->cookies as $cookie) {
+            foreach ($cookie as $attribute => $value) {
+                $cookie[ucfirst($attribute)] = $value;
+            }
+            $cookies[] = new SetCookie($cookie);
+        }
+
+        return $cookies;
+    }
 }

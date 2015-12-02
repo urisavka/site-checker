@@ -1,0 +1,8 @@
+{
+  "cookies": [
+    {
+      "Name": "cookieName",
+      "Value": "cookieVal"
+    }
+  ]
+}

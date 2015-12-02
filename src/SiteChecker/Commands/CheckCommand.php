@@ -12,6 +12,8 @@ use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
+use Noodlehaus\Config as FileConfig;
+use Noodlehaus\Exception\FileNotFoundException;
 
 /**
  * Class CheckCommand
@@ -65,6 +67,20 @@ EOT
 
         if ($input->getOptions()) {
             $config = new Config();
+
+            // Load configuration from file if any
+            try {
+                $conf = FileConfig::load('../config/app.json');
+            } catch (FileNotFoundException $exception) {
+                $conf = null;
+            }
+            if (!is_null($conf)) {
+                foreach ($config as $key => $value) {
+                    if (!empty($conf->get($key))) {
+                        $config->{$key} = $conf->get($key);
+                    }
+                }
+            }
 
             if ($input->getOption('log-success')) {
                 $config->showOnlyProblems = false;

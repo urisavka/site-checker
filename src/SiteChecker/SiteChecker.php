@@ -3,6 +3,7 @@
 namespace SiteChecker;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
@@ -87,7 +88,6 @@ class SiteChecker
           RequestOptions::COOKIES => true,
         ]);
 
-
         return new static($client, $logger);
     }
 
@@ -117,9 +117,13 @@ class SiteChecker
         if (!$this->shouldBeChecked($asset)) {
             return;
         }
+        $cookies = $this->getConfig()->getCookies();
+
+        $jar = new CookieJar(false, $cookies);
 
         try {
-            $response = $this->client->request('GET', $asset->getURL());
+            $response = $this->client->request('GET', $asset->getURL(),
+              ['cookies' => $jar]);
         } catch (RequestException $exception) {
             $response = $exception->getResponse();
             $asset->setResponseCode('500');
@@ -205,7 +209,7 @@ class SiteChecker
             $assets = array_merge(
               $assets,
               $this->createAssetsFromDOMElements(
-                $html, '//script', 'src','js file', $parentPage
+                $html, '//script', 'src', 'js file', $parentPage
               )
             );
         }
@@ -269,11 +273,11 @@ class SiteChecker
     protected function isHtmlPage(ResponseInterface $response)
     {
         foreach ($response->getHeader('content-type') as $header) {
-            if (stristr($header, 'text/html') !== FALSE) {
+            if (stristr($header, 'text/html') !== false) {
                 return true;
             }
         }
-        return FALSE;
+        return false;
     }
 
     /**

@@ -2,3 +2,5 @@
 /vendor
 /log/*
 /composer.phar
+/config/*
+!/config/app.json.default
