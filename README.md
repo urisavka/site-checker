@@ -1,2 +1,6 @@
 # Site Checker
-Checks site for 404 and 403 pages.
+Check site for broken links, missing images, css and javascript files.
+
+# Installation
+``composer install``
+
