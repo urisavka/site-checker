@@ -70,7 +70,7 @@ EOT
 
             // Load configuration from file if any
             try {
-                $conf = FileConfig::load('../config/app.json');
+                $conf = FileConfig::load(__DIR__ . '/../../../config/app.json');
             } catch (FileNotFoundException $exception) {
                 $conf = null;
             }

@@ -7,7 +7,6 @@
 
 namespace SiteChecker;
 
-use GuzzleHttp\Cookie\SetCookie;
 
 
 /**
@@ -35,15 +34,6 @@ class Config
      */
     public function getCookies()
     {
-        $cookies = [];
-        // Ensure proper cookie format
-        foreach ($this->cookies as $cookie) {
-            foreach ($cookie as $attribute => $value) {
-                $cookie[ucfirst($attribute)] = $value;
-            }
-            $cookies[] = new SetCookie($cookie);
-        }
-
-        return $cookies;
+        return $this->cookies;
     }
 }

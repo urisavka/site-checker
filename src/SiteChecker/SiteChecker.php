@@ -4,6 +4,7 @@ namespace SiteChecker;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\CookieJar;
+use GuzzleHttp\Cookie\SetCookie;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
@@ -117,7 +118,12 @@ class SiteChecker
         if (!$this->shouldBeChecked($asset)) {
             return;
         }
-        $cookies = $this->getConfig()->getCookies();
+        $cookies = $this->config->getCookies();
+
+        foreach ($cookies as $key => $cookie) {
+            $cookie['Domain'] = $this->basePage->host;
+            $cookies[$key] = new SetCookie($cookie);
+        }
 
         $jar = new CookieJar(false, $cookies);
 
