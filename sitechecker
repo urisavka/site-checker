@@ -1,0 +1,2 @@
+#!/bin/bash
+php app/console.php site-checker:check "$@"

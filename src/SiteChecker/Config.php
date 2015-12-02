@@ -18,7 +18,6 @@ class Config
     public $checkImages = true;
     public $checkCSS = true;
     public $checkJS = true;
-    public $checkFonts = true;
     public $showFullTags = false;
     public $showOnlyProblems = false;
     public $checkExternal = false;
