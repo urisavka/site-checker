@@ -15,6 +15,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
 define('CONFIG_PATH', '/../../../config/app.json');
+
 /**
  * Class CheckCommand
  * @package SiteChecker\Commands
@@ -71,7 +72,7 @@ EOT
 
             // Load configuration from file if any
             $conf = (array)json_decode(file_get_contents(__DIR__ . CONFIG_PATH));
-            $conf = $conf[$site->host] ?: null;
+            $conf = isset($conf[$site->host]) ? $conf[$site->host] : null;
 
             if (!is_null($conf)) {
                 foreach ($config as $key => $value) {
