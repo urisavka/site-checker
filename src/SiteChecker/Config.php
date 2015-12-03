@@ -8,7 +8,6 @@
 namespace SiteChecker;
 
 
-
 /**
  * Class Config
  * @package SiteChecker
@@ -27,12 +26,17 @@ class Config
      */
     public $ignoreWhiteSpaces = true;
     public $cookies = [];
+    public $excludedUrls = [];
 
     /**
      * @return array
      */
     public function getCookies()
     {
-        return $this->cookies;
+        $cookies = [];
+        foreach ($this->cookies as $cookie) {
+            $cookies[] = (array)$cookie;
+        }
+        return (array)$cookies;
     }
 }

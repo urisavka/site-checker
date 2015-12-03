@@ -3,6 +3,7 @@
 namespace SiteChecker\Commands;
 
 use Psr\Log\LogLevel;
+use SiteChecker\Asset;
 use SiteChecker\Config;
 use SiteChecker\SiteChecker;
 use Symfony\Component\Console\Command\Command;
@@ -12,9 +13,8 @@ use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use Noodlehaus\Config as FileConfig;
-use Noodlehaus\Exception\FileNotFoundException;
 
+define('CONFIG_PATH', '/../../../config/app.json');
 /**
  * Class CheckCommand
  * @package SiteChecker\Commands
@@ -40,7 +40,7 @@ Checks a site for broken links and missing files (CSS, js, images)
 
 Usage:
 
-<info> app/console site-checker:check http://site.url</info>
+<info> sitechecker http://site.url</info>
 EOT
           );
     }
@@ -54,6 +54,7 @@ EOT
 
         $site = $input->getArgument('site');
         $output->writeln('<header>Checking ' . $site . '... </header>');
+        $site = new Asset($site);
 
         $verbosityLevelMap = [];
         if ($input->getOption('log-success')) {
@@ -69,15 +70,13 @@ EOT
             $config = new Config();
 
             // Load configuration from file if any
-            try {
-                $conf = FileConfig::load(__DIR__ . '/../../../config/app.json');
-            } catch (FileNotFoundException $exception) {
-                $conf = null;
-            }
+            $conf = (array)json_decode(file_get_contents(__DIR__ . CONFIG_PATH));
+            $conf = $conf[$site->host] ?: null;
+
             if (!is_null($conf)) {
                 foreach ($config as $key => $value) {
-                    if (!empty($conf->get($key))) {
-                        $config->{$key} = $conf->get($key);
+                    if (!empty($conf->{$key})) {
+                        $config->{$key} = $conf->{$key};
                     }
                 }
             }

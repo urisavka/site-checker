@@ -1,14 +1,16 @@
 {
-  "checkImages" : true,
-  "checkCSS" : true,
-  "checkJS" : true,
-  "showFullTags" : false,
-  "showOnlyProblems" : false,
-  "checkExternal" : false,
-  "cookies": [
-    {
-      "Name": "cookieName",
-      "Value": "cookieVal"
-    }
-  ]
+  "www.example.com": {
+    "checkImages" : true,
+    "checkCSS" : true,
+    "checkJS" : true,
+    "showFullTags" : false,
+    "showOnlyProblems" : false,
+    "checkExternal" : false,
+    "cookies": [
+       {
+         "Name": "cookieName",
+         "Value": "cookieVal"
+       }
+     ]
+  }
 }

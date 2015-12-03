@@ -6,7 +6,8 @@ Clone repository and run ``composer install``
 
 # Configuration
 Copy ``config/app.json.default`` into ``config/app.json`` and add whatever you want there.
-Could be parameters or specific cookies to use.
+
+Could be parameters, specific cookies or excluded URLs.
 
 # Usage
 Console tool: ``sitechecker [-e|--check-external] [-s|--log-success] [-f|--full-html] [--] <site>``

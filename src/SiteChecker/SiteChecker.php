@@ -87,6 +87,7 @@ class SiteChecker
         $client = new Client([
           RequestOptions::ALLOW_REDIRECTS => true,
           RequestOptions::COOKIES => true,
+          RequestOptions::VERIFY => false,
         ]);
 
         return new static($client, $logger);
@@ -129,7 +130,11 @@ class SiteChecker
 
         try {
             $response = $this->client->request('GET', $asset->getURL(),
-              ['cookies' => $jar]);
+              ['cookies' => $jar, 'config' => [
+                'curl' => [
+                  CURLOPT_SSLVERSION => -9838
+                ]
+              ]]);
         } catch (RequestException $exception) {
             $response = $exception->getResponse();
             $asset->setResponseCode('500');
@@ -174,7 +179,7 @@ class SiteChecker
 
         /** @var Asset $asset */
         foreach ($allAssets as $asset) {
-            if (!$asset->isEmailUrl()) {
+            if ($asset->isHttp()) {
                 $this->normalizeUrl($asset);
                 if ($this->shouldBeChecked($asset)) {
                     $this->checkAsset($asset);
@@ -324,6 +329,9 @@ class SiteChecker
      */
     protected function shouldBeChecked(Asset $asset)
     {
+        if (in_array($asset->getURL(), $this->config->excludedUrls)) {
+            return false;
+        }
         if (!$this->config->checkExternal && $this->isExternal($asset)) {
             return false;
         }

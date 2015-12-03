@@ -35,6 +35,11 @@ class Asset
     public $path;
 
     /**
+     * @var
+     */
+    public $query;
+
+    /**
      * @var Asset
      */
     public $parentPage;
@@ -61,12 +66,17 @@ class Asset
      * @param string $url
      * @param Asset $parentPage
      * @param $fullHtml
+     * @param $type
      */
-    public function __construct($url, $parentPage = null, $fullHtml = '', $type ='page')
-    {
+    public function __construct(
+      $url,
+      $parentPage = null,
+      $fullHtml = '',
+      $type = 'page'
+    ) {
         $urlProperties = parse_url($url);
 
-        foreach (['scheme', 'host', 'path', 'port'] as $property) {
+        foreach (['scheme', 'host', 'path', 'port', 'query'] as $property) {
             if (isset($urlProperties[$property])) {
                 $this->$property = $urlProperties[$property];
             }
@@ -101,9 +111,13 @@ class Asset
      *
      * @return bool
      */
-    public function isEmailUrl()
+    public function isHttp()
     {
-        return $this->scheme === 'mailto';
+        // Empty scheme usually means http
+        return in_array(
+          $this->scheme,
+          ['http', 'https', '']
+        );
     }
 
     /**
@@ -217,8 +231,13 @@ class Asset
           1) : $this->path;
 
         $port = ($this->port === 80 ? '' : ":{$this->port}");
+        $url = "{$this->scheme}://{$this->host}{$port}/{$path}";
 
-        return "{$this->scheme}://{$this->host}{$port}/{$path}";
+        if ($this->query) {
+            $url .= "?{$this->query}";
+        }
+
+        return $url;
     }
 
     /**
@@ -239,11 +258,17 @@ class Asset
         return !$this->isError();
     }
 
+    /**
+     * @return bool
+     */
     public function isError()
     {
         return in_array($this->responseCode, self::$CODES_ERROR);
     }
 
+    /**
+     * @return bool
+     */
     public function isWarning()
     {
         return in_array($this->responseCode, self::$CODES_WARNING);
