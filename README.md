@@ -7,13 +7,14 @@ Clone repository and run ``composer install``
 # Configuration
 Copy ``config/app.json.default`` into ``config/app.json`` and add whatever you want there.
 
-Could be parameters, specific cookies or excluded URLs.
+Could be parameters, cookies or excluded URLs.
 
 # Usage
 Console tool: ``sitechecker [-e|--check-external] [-s|--log-success] [-f|--full-html] [--] <site>``
 From your code:
 ```PHP
-$logger = new ConsoleLogger($output, $verbosityLevelMap); // Whatever logger that supports ->info() and ->error() methods
-$siteChecker = SiteChecker::create($logger);
+$siteChecker = SiteChecker::create();
 $siteChecker->check('http://gooogle.com');
+$results = $siteChecker->getResults();
 ```
+See CheckCommand for real usage with Observer.

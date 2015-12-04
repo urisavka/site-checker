@@ -5,6 +5,7 @@ namespace SiteChecker\Commands;
 use Psr\Log\LogLevel;
 use SiteChecker\Asset;
 use SiteChecker\Config;
+use SiteChecker\ConsoleObserver;
 use SiteChecker\SiteChecker;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
@@ -65,7 +66,8 @@ EOT
         }
 
         $logger = new ConsoleLogger($output, $verbosityLevelMap);
-        $siteChecker = SiteChecker::create($logger);
+        $observer = new ConsoleObserver($logger);
+        $siteChecker = SiteChecker::create($observer);
 
         if ($input->getOptions()) {
             $config = new Config();
@@ -94,6 +96,7 @@ EOT
                 $config->showFullTags = true;
             }
             $siteChecker->setConfig($config);
+            $observer->setConfig($config);
         }
         $siteChecker->check($site);
     }

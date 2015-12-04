@@ -8,7 +8,6 @@ use GuzzleHttp\Cookie\SetCookie;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -34,9 +33,9 @@ class SiteChecker
     protected $basePage;
 
     /**
-     * @var LoggerInterface
+     * @var SiteCheckObserver
      */
-    protected $logger;
+    protected $observer;
 
     /**
      * @var Client
@@ -68,21 +67,21 @@ class SiteChecker
     /**
      * SiteChecker constructor.
      * @param \GuzzleHttp\Client $client
-     * @param \Psr\Log\LoggerInterface|null $logger
+     * @param \SiteChecker\SiteCheckObserver|null $observer
      */
-    public function __construct(Client $client, LoggerInterface $logger = null)
+    public function __construct(Client $client, SiteCheckObserver $observer = null)
     {
-        $this->logger = $logger;
         $this->client = $client;
+        $this->observer = $observer ?: new DummyObserver();
         $this->config = new Config();
     }
 
 
     /**
-     * @param \Psr\Log\LoggerInterface|null $logger
+     * @param \SiteChecker\SiteCheckObserver $observer
      * @return static
      */
-    public static function create(LoggerInterface $logger = null)
+    public static function create(SiteCheckObserver $observer)
     {
         $client = new Client([
           RequestOptions::ALLOW_REDIRECTS => true,
@@ -90,7 +89,7 @@ class SiteChecker
           RequestOptions::VERIFY => false,
         ]);
 
-        return new static($client, $logger);
+        return new static($client, $observer);
     }
 
     /**
@@ -107,7 +106,7 @@ class SiteChecker
         $this->basePage = $baseUrl;
 
         $this->checkAsset($baseUrl);
-        $this->checkResults();
+        $this->observer->receiveResults($this->checkedAssets);
     }
 
 
@@ -117,6 +116,10 @@ class SiteChecker
     protected function checkAsset(Asset $asset)
     {
         if (!$this->shouldBeChecked($asset)) {
+            return;
+        }
+
+        if (!$this->observer->pageToCheck($asset)) {
             return;
         }
         $cookies = $this->config->getCookies();
@@ -144,7 +147,7 @@ class SiteChecker
             $asset->setResponseCode($response->getStatusCode());
         }
 
-        $this->logResult($asset);
+        $this->observer->pageChecked($asset, $response);
 
         $this->checkedAssets[] = $asset;
 
@@ -292,38 +295,6 @@ class SiteChecker
     }
 
     /**
-     * Called when the crawler has crawled the given url.
-     *
-     * @param Asset $asset
-     */
-    public function logResult($asset)
-    {
-        $code = $asset->getResponseCode();
-        $messageParts = ['Checking'];
-        if ($this->isExternal($asset)) {
-            $messageParts[] = 'external';
-        }
-        $messageParts[] = 'asset: ' . $asset->getURL();
-        if ($parent = $asset->getParentPage()) {
-            $messageParts[] = 'on a page: ' . $parent->getURL() . '.';
-        }
-        if ($this->config->showFullTags && $html = $asset->getFullHtml()) {
-            $messageParts[] = 'Full html of it is: ' . $html . '.';
-        }
-        $messageParts[] = 'Received code: ' . $code;
-        $message = implode(' ', $messageParts);
-
-        $this->messages[] = $message;
-        if ($asset->isError()) {
-            $this->logger->error($message);
-        } elseif ($asset->isWarning()) {
-            $this->logger->warning($message);
-        } else {
-            $this->logger->info($message);
-        }
-    }
-
-    /**
      * @param Asset $asset
      * @return bool
      */
@@ -347,29 +318,6 @@ class SiteChecker
         return in_array($asset->getURL(), $this->checkedAssets);
     }
 
-    /**
-     * Called when the crawl has ended.
-     */
-    public function checkResults()
-    {
-        $this->logger->info("Check is finished. Here are the results:");
-        $successCount = 0;
-        $failedCount = 0;
-
-        foreach ($this->checkedAssets as $asset) {
-            if ($asset->isSuccessful()) {
-                $successCount++;
-            } else {
-                $failedCount++;
-            }
-        }
-        if ($successCount) {
-            $this->logger->info('Successful: ' . $successCount);
-        }
-        if ($failedCount) {
-            $this->logger->error('Failed: ' . $failedCount);
-        }
-    }
 
     /**
      * Normalize the given url.
@@ -390,6 +338,14 @@ class SiteChecker
         }
 
         return $asset->removeFragment();
+    }
+
+    /**
+     * @return \SiteChecker\Asset[]
+     */
+    public function getResults()
+    {
+        return $this->checkedAssets;
     }
 
 }

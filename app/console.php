@@ -14,4 +14,3 @@ use SiteChecker\Commands\CheckCommand;
 $app = new Application();
 $app->add(new CheckCommand());
 $app->run();
-?>
