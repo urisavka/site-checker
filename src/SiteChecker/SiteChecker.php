@@ -106,6 +106,13 @@ class SiteChecker
         $this->basePage = $baseUrl;
 
         $this->checkAsset($baseUrl);
+        foreach ($this->config->includedUrls as $includedUrl) {
+            $asset = new Asset($includedUrl);
+            $this->normalizeUrl($asset);
+            if (!in_array($asset->getUrl(), $this->checkedAssets)) {
+                $this->checkAsset($asset);
+            }
+        }
         $this->observer->receiveResults($this->checkedAssets);
     }
 
@@ -302,6 +309,11 @@ class SiteChecker
     {
         if (in_array($asset->getURL(), $this->config->excludedUrls)) {
             return false;
+        }
+        foreach ($this->config->excludedUrls as $excludedUrl) {
+            if (preg_match('/' . $excludedUrl . '/i', $asset->getURL())) {
+                return false;
+            }
         }
         if (!$this->config->checkExternal && $this->isExternal($asset)) {
             return false;

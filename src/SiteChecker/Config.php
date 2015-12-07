@@ -24,6 +24,7 @@ class Config
     public $ignoreWhiteSpaces = true;
     public $cookies = [];
     public $excludedUrls = [];
+    public $includedUrls = [];
 
     /**
      * @return array

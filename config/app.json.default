@@ -6,6 +6,12 @@
     "showFullTags" : false,
     "showOnlyProblems" : false,
     "checkExternal" : false,
+    "excludedUrls" : [
+          ".*style.css.*"
+      ],
+    "includedUrls": [
+        ""
+      ],
     "cookies": [
        {
          "Name": "cookieName",

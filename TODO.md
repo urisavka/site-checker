@@ -1,4 +1,3 @@
-- regular expressions for excluded URLs
 - username/password authorization for HTTP
 - robots.txt exclusion
 - check html5 video
