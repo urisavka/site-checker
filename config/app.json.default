@@ -12,5 +12,7 @@
          "Value": "cookieVal"
        }
      ]
-  }
+  },
+  "reportEmail": "your.email@example.com",
+  "reportEMailFrom": "sitechecker@example.com"
 }

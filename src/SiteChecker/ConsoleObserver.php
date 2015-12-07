@@ -72,9 +72,48 @@ class ConsoleObserver implements SiteCheckObserver
      */
     public function receiveResults(array $assets)
     {
-        $this->checkResults($assets);
+        $this->showResults($assets);
+        $this->sendEmailResults($assets);
     }
 
+    /**
+     * Show results.
+     *
+     * @param Asset[] $assets
+     */
+    protected function sendEmailResults($assets)
+    {
+        if (!empty($this->config->reportEmail)) {
+            $countFailed = 0;
+            $messages = [];
+            foreach ($assets as $asset) {
+                if ($asset->isError()) {
+                    $countFailed++;
+                    $messages[] = $asset->getURL() .
+                      ' on ' .
+                      $asset->getParentPage()->getURL();
+                }
+            }
+            if (empty($messages)) {
+                return;
+            }
+            $mail = new \PHPMailer();
+            $mailFrom = !empty($this->config->reportEmailFrom) ?
+              $this->config->reportEmailFrom : $this->config->reportEmail;
+            $mail->setFrom($mailFrom, 'Site Checker');
+            $mail->addAddress($this->config->reportEmail);
+            $mail->Subject = 'SiteChecker report';
+            $mail->Body = "Hi, here are some broken links on your website:\n\n";
+            $mail->Body .= implode('<br>', $messages);
+
+            if (!$mail->send()) {
+                $this->logger->error('Message could not be sent.');
+                $this->logger->error('Mailer Error: ' . $mail->ErrorInfo);
+            } else {
+                $this->logger->info('Message has been sent');
+            }
+        }
+    }
 
     /**
      * Called when the checker has checked the given page.
@@ -109,7 +148,7 @@ class ConsoleObserver implements SiteCheckObserver
      *
      * @param Asset[] $assets
      */
-    public function checkResults(array $assets)
+    public function showResults(array $assets)
     {
         $this->logger->info("Check is finished. Here are the results:");
         $successCount = 0;

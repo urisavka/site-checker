@@ -15,6 +15,8 @@ class Config
     public $showFullTags = false;
     public $showOnlyProblems = false;
     public $checkExternal = false;
+    public $reportEmail = null;
+    public $reportEmailFrom = null;
     /**
      * It's not okay to have links with whitespaces, but browsers
      * usually fix it, so let's ignore it in most cases

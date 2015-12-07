@@ -73,13 +73,18 @@ EOT
             $config = new Config();
 
             // Load configuration from file if any
-            $conf = (array)json_decode(file_get_contents(__DIR__ . CONFIG_PATH));
-            $conf = isset($conf[$site->host]) ? $conf[$site->host] : null;
+            $conf = json_decode(file_get_contents(__DIR__ . CONFIG_PATH));
+            $siteConf = isset($conf->{$site->host}) ? $conf->{$site->host} : null;
 
-            if (!is_null($conf)) {
+            if (!is_null($siteConf) || !is_null($conf)) {
                 foreach ($config as $key => $value) {
+                    // First use general values
                     if (!empty($conf->{$key})) {
                         $config->{$key} = $conf->{$key};
+                    }
+                    // Then rewrite them with site-specific
+                    if (!empty($siteConf->{$key})) {
+                        $config->{$key} = $siteConf->{$key};
                     }
                 }
             }
