@@ -1,5 +1,5 @@
 # Site Checker
-Check site for broken links, missing images, css and javascript files.
+Recursively checks site for broken links, missing images, css and javascript files starting from giving URL and discovering all links on pages.
 
 # Installation
 Clone repository and run ``composer install``
