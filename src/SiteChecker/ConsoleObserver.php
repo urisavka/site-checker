@@ -59,7 +59,7 @@ class ConsoleObserver implements SiteCheckObserver
      * @param $response
      * @return mixed
      */
-    public function pageChecked(Asset $asset, ResponseInterface $response)
+    public function pageChecked(Asset $asset, ResponseInterface $response = null)
     {
         $this->logResult($asset);
     }
@@ -91,7 +91,7 @@ class ConsoleObserver implements SiteCheckObserver
                     $countFailed++;
                     $message = $asset->getURL();
                     if ($asset->getParentPage() instanceof Asset) {
-                        $message .= ' on ' .  $asset->getParentPage()->getURL();
+                        $message .= ' on ' . $asset->getParentPage()->getURL();
                     }
                     $messages[] = $message;
                 }
@@ -103,7 +103,14 @@ class ConsoleObserver implements SiteCheckObserver
             $mailFrom = !empty($this->config->reportEmailFrom) ?
               $this->config->reportEmailFrom : $this->config->reportEmail;
             $mail->setFrom($mailFrom, 'Site Checker');
-            $mail->addAddress($this->config->reportEmail);
+            if (stristr($this->config->reportEmail, ',')) {
+                $emailAdresses = explode(',', $this->config->reportEmail);
+                foreach ($emailAdresses as $emailAdress) {
+                    $mail->addAddress($emailAdress);
+                }
+            } else {
+                $mail->addAddress($this->config->reportEmail);
+            }
             $mail->Subject = 'SiteChecker report';
             $mail->Body = "Hi, here are some broken links on your website:\n\n";
             $mail->Body .= implode('<br>', $messages);
@@ -124,7 +131,7 @@ class ConsoleObserver implements SiteCheckObserver
      */
     public function logResult($asset)
     {
-        $code = $asset->getResponseCode();
+        $code = ($asset instanceof Asset) ? $asset->getResponseCode() : Asset::CODE_ERROR;
         $messageParts = ['Checking'];
         $messageParts[] = 'asset: ' . $asset->getURL();
         if ($parent = $asset->getParentPage()) {

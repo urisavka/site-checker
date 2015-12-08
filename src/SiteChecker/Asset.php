@@ -10,7 +10,7 @@ namespace SiteChecker;
 class Asset
 {
 
-
+    const CODE_ERROR = 500;
     public static $CODES_ERROR = [404, 403, 500, 503];
     public static $CODES_WARNING = [301];
 
