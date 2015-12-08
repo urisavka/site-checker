@@ -1,2 +1,2 @@
 #!/bin/bash
-php app/console.php site-checker:check "$@"
+php `dirname $0`/app/console.php site-checker:check "$@"
