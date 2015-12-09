@@ -37,4 +37,31 @@ class Config
         }
         return (array)$cookies;
     }
+
+    /**
+     * @return array
+     */
+    public function getReportEmailAddresses()
+    {
+        if (stristr($this->reportEmail, ',')) {
+            return explode(',', $this->reportEmail);
+
+        } else {
+            return $this->reportEmail;
+        }
+    }
+
+    /**
+     * @return string
+     */
+    public function getMailFrom()
+    {
+        if (!empty($this->reportEmailFrom)) {
+            return $this->reportEmailFrom;
+        } else {
+            $addresses = $this->getReportEmailAddresses();
+            return $addresses[0];
+        }
+
+    }
 }

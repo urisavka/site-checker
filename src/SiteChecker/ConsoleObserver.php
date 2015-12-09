@@ -85,44 +85,47 @@ class ConsoleObserver implements SiteCheckObserver
      */
     protected function sendEmailResults($assets)
     {
-        if (!empty($this->config->reportEmail)) {
-            $countFailed = 0;
-            $messages = [];
-            foreach ($assets as $asset) {
-                if ($asset->isError()) {
-                    $countFailed++;
-                    $message = $asset->getURL();
-                    if ($asset->getParentPage() instanceof Asset) {
-                        $message .= ' on ' . $asset->getParentPage()->getURL();
-                    }
-                    $messages[] = $message;
-                }
+        if (empty($this->config->reportEmail)) {
+            return;
+        }
+        $countFailed = 0;
+        $messages = [];
+        $assets = array_filter(
+            $assets,
+            function (Asset $asset) {
+                return $asset->isError();
             }
-            if (empty($messages)) {
-                return;
+        );
+        /** @var Asset $asset */
+        foreach ($assets as $asset) {
+            $countFailed++;
+            $message = $asset->getURL();
+            if ($asset->getParentPage() instanceof Asset) {
+                $message .= ' on ' . $asset->getParentPage()->getURL();
             }
-            $mail = new \PHPMailer();
-            $mailFrom = !empty($this->config->reportEmailFrom) ?
-                $this->config->reportEmailFrom : $this->config->reportEmail;
-            $mail->setFrom($mailFrom, 'Site Checker');
-            if (stristr($this->config->reportEmail, ',')) {
-                $emailAdresses = explode(',', $this->config->reportEmail);
-                foreach ($emailAdresses as $emailAdress) {
-                    $mail->addAddress($emailAdress);
-                }
-            } else {
-                $mail->addAddress($this->config->reportEmail);
-            }
-            $mail->Subject = 'SiteChecker report';
-            $mail->Body = "Hi, here are some broken links on your website:\n\n";
-            $mail->Body .= implode('<br>', $messages);
+            $messages[] = $message;
+        }
+        if (empty($messages)) {
+            return;
+        }
 
-            if (!$mail->send()) {
-                $this->logger->error('Message could not be sent.');
-                $this->logger->error('Mailer Error: ' . $mail->ErrorInfo);
-            } else {
-                $this->logger->info('Message has been sent');
-            }
+        $mail = new \PHPMailer();
+        $mailFrom = $this->config->getMailFrom();
+        $mail->setFrom($mailFrom, 'Site Checker');
+        $addresses = $this->config->getReportEmailAddresses();
+        foreach ($addresses as $emailAddress) {
+            $mail->addAddress($emailAddress);
+        }
+
+        $mail->Subject = 'SiteChecker report';
+        $mail->Body = "Hi, here are some broken links on your website:\n\n";
+        $mail->Body .= implode('<br>', $messages);
+
+        if (!$mail->send()) {
+            $this->logger->error('Message could not be sent.');
+            $this->logger->error('Mailer Error: ' . $mail->ErrorInfo);
+        } else {
+            $this->logger->info('Message has been sent');
         }
     }
 

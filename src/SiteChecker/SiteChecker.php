@@ -124,13 +124,10 @@ class SiteChecker
      */
     protected function checkAsset(Asset $asset)
     {
-        if (!$this->shouldBeChecked($asset)) {
+        if (!$this->shouldBeChecked($asset) || !$this->observer->pageToCheck($asset)) {
             return;
         }
 
-        if (!$this->observer->pageToCheck($asset)) {
-            return;
-        }
         $cookies = $this->config->getCookies();
 
         foreach ($cookies as $key => $cookie) {
@@ -147,7 +144,7 @@ class SiteChecker
                 ]);
         } catch (RequestException $exception) {
             $response = $exception->getResponse();
-            $asset->setResponseCode('500');
+            $asset->setResponseCode(Asset::CODE_ERROR);
         }
 
         if ($response) {
