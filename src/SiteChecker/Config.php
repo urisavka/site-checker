@@ -47,7 +47,7 @@ class Config
             return explode(',', $this->reportEmail);
 
         } else {
-            return $this->reportEmail;
+            return [$this->reportEmail];
         }
     }
 
