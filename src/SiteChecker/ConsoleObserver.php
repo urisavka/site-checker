@@ -59,8 +59,10 @@ class ConsoleObserver implements SiteCheckObserver
      * @param $response
      * @return mixed
      */
-    public function pageChecked(Asset $asset, ResponseInterface $response = null)
-    {
+    public function pageChecked(
+        Asset $asset,
+        ResponseInterface $response = null
+    ) {
         $this->logResult($asset);
     }
 
@@ -101,7 +103,7 @@ class ConsoleObserver implements SiteCheckObserver
             }
             $mail = new \PHPMailer();
             $mailFrom = !empty($this->config->reportEmailFrom) ?
-              $this->config->reportEmailFrom : $this->config->reportEmail;
+                $this->config->reportEmailFrom : $this->config->reportEmail;
             $mail->setFrom($mailFrom, 'Site Checker');
             if (stristr($this->config->reportEmail, ',')) {
                 $emailAdresses = explode(',', $this->config->reportEmail);

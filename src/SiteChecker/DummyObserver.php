@@ -26,7 +26,7 @@ class DummyObserver implements SiteCheckObserver
      * @param $response
      * @return mixed
      */
-    public function pageChecked(Asset $asset, ResponseInterface $response)
+    public function pageChecked(Asset $asset, ResponseInterface $response = null)
     {
 
     }

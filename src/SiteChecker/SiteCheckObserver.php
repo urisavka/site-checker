@@ -27,7 +27,10 @@ interface SiteCheckObserver
      * @param ResponseInterface $response
      * @return mixed
      */
-    public function pageChecked(Asset $asset, ResponseInterface $response = null);
+    public function pageChecked(
+        Asset $asset,
+        ResponseInterface $response = null
+    );
 
 
     /**

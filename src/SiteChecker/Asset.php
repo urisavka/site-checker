@@ -69,10 +69,10 @@ class Asset
      * @param $type
      */
     public function __construct(
-      $url,
-      $parentPage = null,
-      $fullHtml = '',
-      $type = 'page'
+        $url,
+        $parentPage = null,
+        $fullHtml = '',
+        $type = 'page'
     ) {
         $urlProperties = parse_url($url);
 
@@ -115,8 +115,8 @@ class Asset
     {
         // Empty scheme usually means http
         return in_array(
-          $this->scheme,
-          ['http', 'https', '']
+            $this->scheme,
+            ['http', 'https', '']
         );
     }
 
@@ -227,8 +227,8 @@ class Asset
      */
     public function getURL()
     {
-        $path = strpos($this->path, '/') === 0 ? substr($this->path,
-          1) : $this->path;
+        $path = strpos($this->path, '/') === 0 ?
+            substr($this->path, 1) : $this->path;
 
         $port = ($this->port === 80 ? '' : ":{$this->port}");
         $url = "{$this->scheme}://{$this->host}{$port}/{$path}";

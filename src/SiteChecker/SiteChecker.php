@@ -69,8 +69,10 @@ class SiteChecker
      * @param \GuzzleHttp\Client $client
      * @param \SiteChecker\SiteCheckObserver|null $observer
      */
-    public function __construct(Client $client, SiteCheckObserver $observer = null)
-    {
+    public function __construct(
+        Client $client,
+        SiteCheckObserver $observer = null
+    ) {
         $this->client = $client;
         $this->observer = $observer ?: new DummyObserver();
         $this->config = new Config();
@@ -84,9 +86,9 @@ class SiteChecker
     public static function create(SiteCheckObserver $observer)
     {
         $client = new Client([
-          RequestOptions::ALLOW_REDIRECTS => true,
-          RequestOptions::COOKIES => true,
-          RequestOptions::VERIFY => false,
+            RequestOptions::ALLOW_REDIRECTS => true,
+            RequestOptions::COOKIES => true,
+            RequestOptions::VERIFY => false,
         ]);
 
         return new static($client, $observer);
@@ -140,11 +142,9 @@ class SiteChecker
 
         try {
             $response = $this->client->request('GET', $asset->getURL(),
-              ['cookies' => $jar, 'config' => [
-                'curl' => [
-                  CURLOPT_SSLVERSION => -9838
-                ]
-              ]]);
+                [
+                    'cookies' => $jar,
+                ]);
         } catch (RequestException $exception) {
             $response = $exception->getResponse();
             $asset->setResponseCode('500');
@@ -210,37 +210,40 @@ class SiteChecker
     {
         $assets = [];
 
+        $assetTypes = [
+            'checkImages' => [
+                '//img',
+                'src',
+                'image',
+            ],
+            'checkJS' => [
+                '//script',
+                'src',
+                'js file',
+            ],
+            'checkCSS' => [
+                '//link[@rel="stylesheet"]',
+                'href',
+                'image',
+            ],
+        ];
+
         $assets = array_merge(
-          $assets,
-          $this->createAssetsFromDOMElements(
-            $html, '//a', 'href', 'page', $parentPage
-          )
+            $assets,
+            $this->createAssetsFromDOMElements(
+                $html, '//a', 'href', 'page', $parentPage
+            )
         );
 
-        if ($this->config->checkImages) {
+        foreach ($assetTypes as $configKey => $args) {
+            array_unshift($args, $html);
+            $args[] = $parentPage;
             $assets = array_merge(
-              $assets,
-              $this->createAssetsFromDOMElements(
-                $html, '//img', 'src', 'css file', $parentPage
-              )
-            );
-        }
-
-        if ($this->config->checkJS) {
-            $assets = array_merge(
-              $assets,
-              $this->createAssetsFromDOMElements(
-                $html, '//script', 'src', 'js file', $parentPage
-              )
-            );
-        }
-
-        if ($this->config->checkCSS) {
-            $assets = array_merge(
-              $assets,
-              $this->createAssetsFromDOMElements(
-                $html, '//link[@rel="stylesheet"]', 'href', 'image', $parentPage
-              )
+                $assets,
+                call_user_func_array(
+                    [$this, "createAssetsFromDOMElements"],
+                    $args
+                )
             );
         }
 
@@ -256,11 +259,11 @@ class SiteChecker
      * @return array
      */
     protected function createAssetsFromDOMElements(
-      $html,
-      $selector,
-      $urlAttribute,
-      $type,
-      $parentPage
+        $html,
+        $selector,
+        $urlAttribute,
+        $type,
+        $parentPage
     ) {
         $assets = [];
 
@@ -276,10 +279,10 @@ class SiteChecker
                 }
 
                 $assets[] = new Asset(
-                  $urlValue,
-                  $parentPage,
-                  $element->ownerDocument->saveHTML($element),
-                  $type
+                    $urlValue,
+                    $parentPage,
+                    $element->ownerDocument->saveHTML($element),
+                    $type
                 );
             }
         }
@@ -341,8 +344,8 @@ class SiteChecker
         if ($asset->isRelative()) {
 
             $asset->setScheme($this->basePage->scheme)
-              ->setHost($this->basePage->host)
-              ->setPort($this->basePage->port);
+                ->setHost($this->basePage->host)
+                ->setPort($this->basePage->port);
         }
 
         if ($asset->isProtocolIndependent()) {
