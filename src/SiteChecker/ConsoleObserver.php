@@ -99,11 +99,12 @@ class ConsoleObserver implements SiteCheckObserver
         /** @var Asset $asset */
         foreach ($assets as $asset) {
             $countFailed++;
-            $message = $asset->getURL();
+            $message = ' * '. $asset->getURL();
             if ($asset->getParentPage() instanceof Asset) {
                 $message .= ' on ' . $asset->getParentPage()->getURL();
             }
             $messages[] = $message;
+
         }
         if (empty($messages)) {
             return;
@@ -119,7 +120,7 @@ class ConsoleObserver implements SiteCheckObserver
 
         $mail->Subject = 'SiteChecker report';
         $mail->Body = "Hi, here are some broken links on your website:\n\n";
-        $mail->Body .= implode('<br>', $messages);
+        $mail->Body .= implode(PHP_EOL, $messages);
 
         if (!$mail->send()) {
             $this->logger->error('Message could not be sent.');
