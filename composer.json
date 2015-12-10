@@ -16,6 +16,9 @@
     "symfony/dom-crawler": "^2.7",
     "phpmailer/phpmailer": "^5.2"
   },
+  "require-dev": {
+    "phpmd/phpmd": "2.3.2"
+  },
   "autoload": {
     "psr-4": {
       "": "src/"

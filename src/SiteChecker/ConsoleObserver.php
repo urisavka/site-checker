@@ -75,7 +75,9 @@ class ConsoleObserver implements SiteCheckObserver
     public function receiveResults(array $assets)
     {
         $this->showResults($assets);
-        $this->sendEmailResults($assets);
+        if (!empty($this->config->reportEmail)) {
+            $this->sendEmailResults($assets);
+        }
     }
 
     /**
@@ -85,14 +87,11 @@ class ConsoleObserver implements SiteCheckObserver
      */
     protected function sendEmailResults($assets)
     {
-        if (empty($this->config->reportEmail)) {
-            return;
-        }
         $countFailed = 0;
         $messages = [];
         $assets = array_filter(
             $assets,
-            function (Asset $asset) {
+            function(Asset $asset) {
                 return $asset->isError();
             }
         );
