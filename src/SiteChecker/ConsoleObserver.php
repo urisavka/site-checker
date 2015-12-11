@@ -5,6 +5,7 @@ namespace SiteChecker;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
+use SiteChecker\Interfaces\SiteCheckObserver;
 
 /**
  * Class ConsoleObserver
@@ -98,7 +99,7 @@ class ConsoleObserver implements SiteCheckObserver
         /** @var Asset $asset */
         foreach ($assets as $asset) {
             $countFailed++;
-            $message = ' * '. $asset->getURL();
+            $message = ' * ' . $asset->getURL();
             if ($asset->getParentPage() instanceof Asset) {
                 $message .= ' on ' . $asset->getParentPage()->getURL();
             }
@@ -142,7 +143,7 @@ class ConsoleObserver implements SiteCheckObserver
         if ($parent = $asset->getParentPage()) {
             $messageParts[] = 'on a page: ' . $parent->getURL() . '.';
         }
-        if ($this->config->showFullTags && $html = $asset->getFullHtml()) {
+        if ($this->config->showFullTags && $html = $asset->getHtmlTag()) {
             $messageParts[] = 'Full html of it is: ' . $html . '.';
         }
         $messageParts[] = 'Received code: ' . $code;

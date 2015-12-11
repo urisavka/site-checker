@@ -6,8 +6,10 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Cookie\SetCookie;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\RedirectMiddleware;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
+use SiteChecker\Interfaces\SiteCheckObserver;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -67,7 +69,7 @@ class SiteChecker
     /**
      * SiteChecker constructor.
      * @param \GuzzleHttp\Client $client
-     * @param \SiteChecker\SiteCheckObserver|null $observer
+     * @param SiteCheckObserver|null $observer
      */
     public function __construct(
         Client $client,
@@ -80,13 +82,13 @@ class SiteChecker
 
 
     /**
-     * @param \SiteChecker\SiteCheckObserver $observer
+     * @param SiteCheckObserver $observer
      * @return static
      */
     public static function create(SiteCheckObserver $observer)
     {
         $client = new Client([
-            RequestOptions::ALLOW_REDIRECTS => true,
+            RequestOptions::ALLOW_REDIRECTS => ['track_redirects' => true],
             RequestOptions::COOKIES => true,
             RequestOptions::VERIFY => false,
         ]);
@@ -111,7 +113,7 @@ class SiteChecker
         foreach ($this->config->includedUrls as $includedUrl) {
             $asset = new Asset($includedUrl);
             $this->normalizeUrl($asset);
-            if (!in_array($asset->getUrl(), $this->checkedAssets)) {
+            if ($this->shouldBeChecked($asset) && $this->observer->pageToCheck($asset)) {
                 $this->checkAsset($asset);
             }
         }
@@ -124,10 +126,6 @@ class SiteChecker
      */
     protected function checkAsset(Asset $asset)
     {
-        if (!$this->shouldBeChecked($asset) || !$this->observer->pageToCheck($asset)) {
-            return;
-        }
-
         $cookies = $this->config->getCookies();
 
         foreach ($cookies as $key => $cookie) {
@@ -149,6 +147,11 @@ class SiteChecker
 
         if ($response) {
             $asset->setResponseCode($response->getStatusCode());
+        }
+        $redirects = $response->getHeader(RedirectMiddleware::HISTORY_HEADER);
+        if ($redirects) {
+            $realUrl = array_pop($redirects);
+            // @todo: Set real URL as baseHost instead of starting one.
         }
 
         $this->observer->pageChecked($asset, $response);

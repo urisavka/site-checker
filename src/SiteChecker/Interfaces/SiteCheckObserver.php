@@ -1,8 +1,9 @@
 <?php
 
-namespace SiteChecker;
+namespace SiteChecker\Interfaces;
 
 use Psr\Http\Message\ResponseInterface;
+use SiteChecker\Asset;
 
 /**
  * Interface CheckObserver
@@ -14,7 +15,7 @@ interface SiteCheckObserver
     /**
      * We are about to check a page. Should we?
      *
-     * @param \SiteChecker\Asset $url
+     * @param Asset $url
      * @return bool Whether this page should be checked or not.
      */
     public function pageToCheck(Asset $url);
@@ -23,7 +24,7 @@ interface SiteCheckObserver
     /**
      * Page was checked. Here we have a response.
      *
-     * @param \SiteChecker\Asset $asset
+     * @param Asset $asset
      * @param ResponseInterface $response
      * @return mixed
      */

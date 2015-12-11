@@ -47,7 +47,12 @@ class Asset
     /**
      * @var string
      */
-    private $fullHtml;
+    private $htmlTag;
+
+    /**
+     * @var string
+     */
+    private $contents = '';
 
     /**
      * @var string
@@ -65,13 +70,13 @@ class Asset
      *
      * @param string $url
      * @param Asset $parentPage
-     * @param $fullHtml
+     * @param $htmlTag
      * @param $type
      */
     public function __construct(
         $url,
         $parentPage = null,
-        $fullHtml = '',
+        $htmlTag = '',
         $type = 'page'
     ) {
         $urlProperties = parse_url($url);
@@ -82,9 +87,27 @@ class Asset
             }
         }
         $this->parentPage = $parentPage;
-        $this->fullHtml = $fullHtml;
+        $this->htmlTag = $htmlTag;
         $this->type = $type;
     }
+
+
+    /**
+     * @return string
+     */
+    public function getContents()
+    {
+        return $this->contents;
+    }
+
+    /**
+     * @param string $contents
+     */
+    public function setContents($contents)
+    {
+        $this->contents = $contents;
+    }
+
 
     /**
      * Determine if the url is relative.
@@ -209,17 +232,17 @@ class Asset
     /**
      * @return string
      */
-    public function getFullHtml()
+    public function getHtmlTag()
     {
-        return $this->fullHtml;
+        return $this->htmlTag;
     }
 
     /**
-     * @param string $fullHtml
+     * @param string $htmlTag
      */
-    public function setFullHtml($fullHtml)
+    public function setHtmlTag($htmlTag)
     {
-        $this->fullHtml = $fullHtml;
+        $this->htmlTag = $htmlTag;
     }
 
     /**
