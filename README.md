@@ -2,7 +2,7 @@
 Recursively checks site for broken links, missing images, css and javascript files starting from giving URL and discovering all links on pages.
 
 # Installation
-Clone repository and run ``composer install``
+> git clone git@github.com:urisavka/site-checker.git && cd site-checker && composer update --no-dev
 
 # Configuration
 Copy ``config/app.json.default`` into ``config/app.json`` and add whatever you want there.
