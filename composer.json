@@ -2,7 +2,7 @@
   "name": "urisavka/site_checker",
   "description": "Check site for broken links and moved/deleted files",
   "minimum-stability": "stable",
-  "license": "proprietary",
+  "license": "MIT",
   "authors": [
     {
       "name": "Yurii Savka",
