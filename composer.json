@@ -1,5 +1,5 @@
 {
-  "name": "urisavka/site_checker",
+  "name": "urisavka/site-checker",
   "description": "Check site for broken links and moved/deleted files",
   "minimum-stability": "stable",
   "license": "MIT",
