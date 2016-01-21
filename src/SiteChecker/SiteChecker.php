@@ -83,7 +83,7 @@ class SiteChecker
      * @param \SiteChecker\SiteCheckObserver $observer
      * @return static
      */
-    public static function create(SiteCheckObserver $observer)
+    public static function create(SiteCheckObserver $observer = null)
     {
         $client = new Client([
             RequestOptions::ALLOW_REDIRECTS => true,

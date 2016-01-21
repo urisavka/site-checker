@@ -273,4 +273,21 @@ class Asset
     {
         return in_array($this->responseCode, self::$CODES_WARNING);
     }
+
+    /**
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @return null|string
+     */
+    public function getPath()
+    {
+        return $this->path;
+    }
+
 }

@@ -17,7 +17,8 @@
     "phpmailer/phpmailer": "^5.2"
   },
   "require-dev": {
-    "phpmd/phpmd": "2.3.2"
+    "phpmd/phpmd": "2.3.2",
+    "phpunit/phpunit": "^5.1"
   },
   "autoload": {
     "psr-4": {
