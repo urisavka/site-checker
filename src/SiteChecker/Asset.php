@@ -11,8 +11,8 @@ class Asset
 {
 
     const CODE_ERROR = 500;
-    public static $CODES_ERROR = [404, 403, 500, 503];
-    public static $CODES_WARNING = [301];
+    public static $codesError = [404, 403, 500, 503];
+    public static $codesWarning = [301];
 
     /**
      * @var null|string
@@ -158,6 +158,14 @@ class Asset
     }
 
     /**
+     * @return null|string
+     */
+    public function getHost()
+    {
+        return $this->host;
+    }
+
+    /**
      * Set the host.
      *
      * @param string $host
@@ -248,6 +256,13 @@ class Asset
     /**
      * @return string
      */
+    public function getText() {
+        return strip_tags($this->htmlTag);
+    }
+
+    /**
+     * @return string
+     */
     public function getURL()
     {
         $path = strpos($this->path, '/') === 0 ?
@@ -286,7 +301,7 @@ class Asset
      */
     public function isError()
     {
-        return in_array($this->responseCode, self::$CODES_ERROR);
+        return in_array($this->responseCode, self::$codesError);
     }
 
     /**
@@ -294,6 +309,31 @@ class Asset
      */
     public function isWarning()
     {
-        return in_array($this->responseCode, self::$CODES_WARNING);
+        return in_array($this->responseCode, self::$codesWarning);
     }
+
+    /**
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @param string $type
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+    }
+
+    /**
+     * @return null|string
+     */
+    public function getPath()
+    {
+        return $this->path;
+    }
+
 }

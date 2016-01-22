@@ -96,7 +96,7 @@ class ConsoleObserver implements SiteCheckObserverInterface
         /** @var Asset $asset */
         foreach ($assets as $asset) {
             $countFailed++;
-            $message = ' * ' . $asset->getURL();
+            $message = ' * ' . $asset->getURL(). ' with text: ' . $asset->getText();
             if ($asset->getParentPage() instanceof Asset) {
                 $message .= ' on ' . $asset->getParentPage()->getURL();
             }

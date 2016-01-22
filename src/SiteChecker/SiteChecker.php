@@ -2,13 +2,6 @@
 
 namespace SiteChecker;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Cookie\CookieJar;
-use GuzzleHttp\Cookie\SetCookie;
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\RedirectMiddleware;
-use GuzzleHttp\RequestOptions;
-use Psr\Http\Message\ResponseInterface;
 use SiteChecker\Interfaces\SiteCheckObserverInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -40,11 +33,6 @@ class SiteChecker
     protected $observer;
 
     /**
-     * @var Client
-     */
-    protected $client;
-
-    /**
      * @var Config
      */
     protected $config;
@@ -68,14 +56,11 @@ class SiteChecker
 
     /**
      * SiteChecker constructor.
-     * @param \GuzzleHttp\Client $client
      * @param SiteCheckObserverInterface|null $observer
      */
     public function __construct(
-        Client $client,
         SiteCheckObserverInterface $observer = null
     ) {
-        $this->client = $client;
         $this->observer = $observer ?: new DummyObserver();
         $this->config = new Config();
     }
@@ -85,15 +70,9 @@ class SiteChecker
      * @param SiteCheckObserverInterface $observer
      * @return static
      */
-    public static function create(SiteCheckObserverInterface $observer)
+    public static function create(SiteCheckObserverInterface $observer = null)
     {
-        $client = new Client([
-            RequestOptions::ALLOW_REDIRECTS => ['track_redirects' => true],
-            RequestOptions::COOKIES => true,
-            RequestOptions::VERIFY => false,
-        ]);
-
-        return new static($client, $observer);
+        return new static($observer);
     }
 
     /**
@@ -126,44 +105,15 @@ class SiteChecker
      */
     protected function checkAsset(Asset $asset)
     {
-        $cookies = $this->config->getCookies();
+        $contentExtractor = new HttpClientExtractor($this->config);
+        $contentExtractor->extractContent($asset);
 
-        foreach ($cookies as $key => $cookie) {
-            $cookie['Domain'] = $this->basePage->host;
-            $cookies[$key] = new SetCookie($cookie);
-        }
-
-        $jar = new CookieJar(false, $cookies);
-
-        try {
-            $response = $this->client->request('GET', $asset->getURL(),
-                [
-                    'cookies' => $jar,
-                ]);
-        } catch (RequestException $exception) {
-            $response = $exception->getResponse();
-            $asset->setResponseCode(Asset::CODE_ERROR);
-        }
-
-        if ($response) {
-            $asset->setResponseCode($response->getStatusCode());
-        }
-        $redirects = $response->getHeader(RedirectMiddleware::HISTORY_HEADER);
-        if ($redirects) {
-            $realUrl = array_pop($redirects);
-            // @todo: Set real URL as baseHost instead of starting one.
-        }
-
-        $this->observer->pageChecked($asset, $response);
+        $this->observer->pageChecked($asset);
 
         $this->checkedAssets[] = $asset;
 
-        if (!$response) {
-            return;
-        }
-
-        if (!$this->isExternal($asset) && $this->isHtmlPage($response)) {
-            $this->checkAllAssets($response->getBody()->getContents(), $asset);
+        if ($asset->isSuccessful() && !$this->isExternal($asset)) {
+            $this->checkAllAssets($asset);
         }
 
     }
@@ -180,11 +130,11 @@ class SiteChecker
     /**
      * Crawl all assets in the given html.
      *
-     * @param string $html
      * @param Asset $parentAsset
      */
-    protected function checkAllAssets($html, $parentAsset)
+    protected function checkAllAssets($parentAsset)
     {
+        $html = $parentAsset->getContents();
         $allAssets = $this->getAllAssets($html, $parentAsset);
 
         /** @var Asset $asset */
@@ -235,7 +185,7 @@ class SiteChecker
             )
         );
 
-        foreach ($assetTypes as $configKey => $args) {
+        foreach ($assetTypes as $args) {
             array_unshift($args, $html);
             $args[] = $parentPage;
             $assets = array_merge(
@@ -288,20 +238,6 @@ class SiteChecker
         }
 
         return $assets;
-    }
-
-    /**
-     * @param \Psr\Http\Message\ResponseInterface $response
-     * @return bool
-     */
-    protected function isHtmlPage(ResponseInterface $response)
-    {
-        foreach ($response->getHeader('content-type') as $header) {
-            if (stristr($header, 'text/html') !== false) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

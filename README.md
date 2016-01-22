@@ -1,8 +1,14 @@
 # Site Checker
+[![Build Status](https://travis-ci.org/urisavka/site-checker.svg?branch=master)](https://travis-ci.org/urisavka/site-checker)
+
 Recursively checks site for broken links, missing images, css and javascript files starting from giving URL and discovering all links on pages.
 
 # Installation
-Clone repository and run ``composer install``
+## For console usage
+> git clone git@github.com:urisavka/site-checker.git && cd site-checker && composer update --no-dev
+
+## For usage in a project
+> composer require urisavka/site-checker
 
 # Configuration
 Copy ``config/app.json.default`` into ``config/app.json`` and add whatever you want there.
