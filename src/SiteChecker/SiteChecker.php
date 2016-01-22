@@ -9,7 +9,7 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RedirectMiddleware;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
-use SiteChecker\Interfaces\SiteCheckObserver;
+use SiteChecker\Interfaces\SiteCheckObserverInterface;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -35,7 +35,7 @@ class SiteChecker
     protected $basePage;
 
     /**
-     * @var SiteCheckObserver
+     * @var SiteCheckObserverInterface
      */
     protected $observer;
 
@@ -69,11 +69,11 @@ class SiteChecker
     /**
      * SiteChecker constructor.
      * @param \GuzzleHttp\Client $client
-     * @param SiteCheckObserver|null $observer
+     * @param SiteCheckObserverInterface|null $observer
      */
     public function __construct(
         Client $client,
-        SiteCheckObserver $observer = null
+        SiteCheckObserverInterface $observer = null
     ) {
         $this->client = $client;
         $this->observer = $observer ?: new DummyObserver();
@@ -82,10 +82,10 @@ class SiteChecker
 
 
     /**
-     * @param SiteCheckObserver $observer
+     * @param SiteCheckObserverInterface $observer
      * @return static
      */
-    public static function create(SiteCheckObserver $observer)
+    public static function create(SiteCheckObserverInterface $observer)
     {
         $client = new Client([
             RequestOptions::ALLOW_REDIRECTS => ['track_redirects' => true],

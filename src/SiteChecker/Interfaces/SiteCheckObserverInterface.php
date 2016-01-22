@@ -2,14 +2,13 @@
 
 namespace SiteChecker\Interfaces;
 
-use Psr\Http\Message\ResponseInterface;
 use SiteChecker\Asset;
 
 /**
  * Interface CheckObserver
  * @package SiteChecker
  */
-interface SiteCheckObserver
+interface SiteCheckObserverInterface
 {
 
     /**
@@ -25,12 +24,10 @@ interface SiteCheckObserver
      * Page was checked. Here we have a response.
      *
      * @param Asset $asset
-     * @param ResponseInterface $response
      * @return mixed
      */
     public function pageChecked(
-        Asset $asset,
-        ResponseInterface $response = null
+        Asset $asset
     );
 
 

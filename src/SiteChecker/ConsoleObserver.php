@@ -3,15 +3,14 @@
 namespace SiteChecker;
 
 
-use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
-use SiteChecker\Interfaces\SiteCheckObserver;
+use SiteChecker\Interfaces\SiteCheckObserverInterface;
 
 /**
  * Class ConsoleObserver
  * @package SiteChecker
  */
-class ConsoleObserver implements SiteCheckObserver
+class ConsoleObserver implements SiteCheckObserverInterface
 {
 
     /**
@@ -57,12 +56,10 @@ class ConsoleObserver implements SiteCheckObserver
      * Log page to console.
      *
      * @param \SiteChecker\Asset $asset
-     * @param $response
      * @return mixed
      */
     public function pageChecked(
-        Asset $asset,
-        ResponseInterface $response = null
+        Asset $asset
     ) {
         $this->logResult($asset);
     }

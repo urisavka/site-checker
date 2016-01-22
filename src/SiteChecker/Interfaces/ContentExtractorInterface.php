@@ -11,11 +11,11 @@ namespace SiteChecker;
  * Interface AssetExtractor
  * @package SiteChecker
  */
-interface ContentExtractor
+interface ContentExtractorInterface
 {
     /**
      * @param Asset $asset
-     * @return Asset[]
+     * @return string
      */
    public function extractContent(Asset $asset);
 }

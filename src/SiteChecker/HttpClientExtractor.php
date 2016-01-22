@@ -8,7 +8,7 @@
 namespace SiteChecker;
 
 
-class HttpClientExtractor implements ContentExtractor
+class HttpClientExtractorInterface implements ContentExtractorInterface
 {
     /**
      * @param Asset $asset

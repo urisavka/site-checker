@@ -2,9 +2,9 @@
 namespace SiteChecker;
 
 
-use Psr\Http\Message\ResponseInterface;
+use SiteChecker\Interfaces\SiteCheckObserverInterface;
 
-class DummyObserver implements SiteCheckObserver
+class DummyObserver implements SiteCheckObserverInterface
 {
 
     /**
@@ -23,10 +23,9 @@ class DummyObserver implements SiteCheckObserver
      * Do nothing.
      *
      * @param \SiteChecker\Asset $asset
-     * @param $response
      * @return mixed
      */
-    public function pageChecked(Asset $asset, ResponseInterface $response = null)
+    public function pageChecked(Asset $asset)
     {
 
     }
