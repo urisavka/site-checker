@@ -1,5 +1,5 @@
-# Site Checker
-[![Build Status](https://travis-ci.org/urisavka/site-checker.svg?branch=master)](https://travis-ci.org/urisavka/site-checker)
+# Site Checker 
+[![Build Status](https://travis-ci.org/urisavka/site-checker.svg?branch=master)](https://travis-ci.org/urisavka/site-checker) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/urisavka/site-checker/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/urisavka/site-checker/?branch=master)
 
 Recursively checks site for broken links, missing images, css and javascript files starting from giving URL and discovering all links on pages.
 
