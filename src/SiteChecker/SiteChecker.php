@@ -105,7 +105,18 @@ class SiteChecker
      */
     protected function checkAsset(Asset $asset)
     {
-        $contentExtractor = new HttpClientExtractor($this->config);
+        if ($asset->isHttp()) {
+            $contentExtractor = new HttpClientContentExtractor($this->config);
+        }
+
+        if ($asset->isLocalFile()) {
+            $contentExtractor = new LocalFileContentExtractor();
+        }
+
+        if (empty($contentExtractor)) {
+            return;
+        }
+
         $contentExtractor->extractContent($asset);
 
         $this->observer->pageChecked($asset);

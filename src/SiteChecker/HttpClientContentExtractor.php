@@ -13,7 +13,7 @@ use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
 use SiteChecker\Interfaces\ContentExtractorInterface;
 
-class HttpClientExtractor implements ContentExtractorInterface
+class HttpClientContentExtractor implements ContentExtractorInterface
 {
     /** @var Config */
     private $config;

@@ -130,7 +130,7 @@ class Asset
     }
 
     /**
-     * Determine if this is a mailto-link.
+     * Determine if this is a http-link.
      *
      * @return bool
      */
@@ -140,6 +140,19 @@ class Asset
         return in_array(
             $this->scheme,
             ['http', 'https', '']
+        );
+    }
+
+    /**
+     * Determine if this is a local file.
+     *
+     * @return bool
+     */
+    public function isLocalFile()
+    {
+        return in_array(
+            $this->scheme,
+            ['file']
         );
     }
 
