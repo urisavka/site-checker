@@ -45,10 +45,9 @@ class Config
     {
         if (stristr($this->reportEmail, ',')) {
             return explode(',', $this->reportEmail);
-
-        } else {
-            return [$this->reportEmail];
         }
+
+        return [$this->reportEmail];
     }
 
     /**
@@ -58,10 +57,10 @@ class Config
     {
         if (!empty($this->reportEmailFrom)) {
             return $this->reportEmailFrom;
-        } else {
-            $addresses = $this->getReportEmailAddresses();
-            return $addresses[0];
         }
+
+        $addresses = $this->getReportEmailAddresses();
+        return $addresses[0];
 
     }
 }

@@ -232,7 +232,7 @@ class SiteChecker
             )
         );
 
-        foreach ($assetTypes as $configKey => $args) {
+        foreach ($assetTypes as $args) {
             array_unshift($args, $html);
             $args[] = $parentPage;
             $assets = array_merge(

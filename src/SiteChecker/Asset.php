@@ -11,8 +11,8 @@ class Asset
 {
 
     const CODE_ERROR = 500;
-    public static $CODES_ERROR = [404, 403, 500, 503];
-    public static $CODES_WARNING = [301];
+    public static $codesError = [404, 403, 500, 503];
+    public static $codesWarning = [301];
 
     /**
      * @var null|string
@@ -225,6 +225,13 @@ class Asset
     /**
      * @return string
      */
+    public function getText() {
+        return strip_tags($this->fullHtml);
+    }
+
+    /**
+     * @return string
+     */
     public function getURL()
     {
         $path = strpos($this->path, '/') === 0 ?
@@ -263,7 +270,7 @@ class Asset
      */
     public function isError()
     {
-        return in_array($this->responseCode, self::$CODES_ERROR);
+        return in_array($this->responseCode, self::$codesError);
     }
 
     /**
@@ -271,7 +278,7 @@ class Asset
      */
     public function isWarning()
     {
-        return in_array($this->responseCode, self::$CODES_WARNING);
+        return in_array($this->responseCode, self::$codesWarning);
     }
 
     /**

@@ -50,9 +50,9 @@ EOT
     protected function execute(InputInterface $input, OutputInterface $output)
     {
 
-        $header_style = new OutputFormatterStyle('white', 'green',
+        $headerStyle = new OutputFormatterStyle('white', 'green',
             array('bold'));
-        $output->getFormatter()->setStyle('header', $header_style);
+        $output->getFormatter()->setStyle('header', $headerStyle);
 
         $site = $input->getArgument('site');
         $output->writeln('<header>Checking ' . $site . '... </header>');
