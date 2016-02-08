@@ -33,7 +33,7 @@ class SiteChecker
     protected $basePage;
 
     /**
-     * @var SiteCheckObserver
+     * @var SiteCheckObserverInterface
      */
     protected $observer;
 
@@ -67,11 +67,11 @@ class SiteChecker
     /**
      * SiteChecker constructor.
      * @param \GuzzleHttp\Client $client
-     * @param \SiteChecker\SiteCheckObserver|null $observer
+     * @param \SiteChecker\SiteCheckObserverInterface|null $observer
      */
     public function __construct(
         Client $client,
-        SiteCheckObserver $observer = null
+        SiteCheckObserverInterface $observer = null
     ) {
         $this->client = $client;
         $this->observer = $observer ?: new DummyObserver();
@@ -80,10 +80,10 @@ class SiteChecker
 
 
     /**
-     * @param \SiteChecker\SiteCheckObserver $observer
+     * @param \SiteChecker\SiteCheckObserverInterface $observer
      * @return static
      */
-    public static function create(SiteCheckObserver $observer = null)
+    public static function create(SiteCheckObserverInterface $observer = null)
     {
         $client = new Client([
             RequestOptions::ALLOW_REDIRECTS => true,

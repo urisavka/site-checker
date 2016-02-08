@@ -4,7 +4,7 @@ namespace SiteChecker;
 
 use Psr\Http\Message\ResponseInterface;
 
-class DummyObserver implements SiteCheckObserver
+class DummyObserver implements SiteCheckObserverInterface
 {
 
     /**

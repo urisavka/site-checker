@@ -1,5 +1,5 @@
 <?php
-ini_set('xdebug.max_nesting_level', 1000);
+
 set_time_limit(0);
 date_default_timezone_set('Europe/Berlin');
 

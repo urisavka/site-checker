@@ -8,7 +8,7 @@ use Psr\Http\Message\ResponseInterface;
  * Interface CheckObserver
  * @package SiteChecker
  */
-interface SiteCheckObserver
+interface SiteCheckObserverInterface
 {
 
     /**

@@ -10,7 +10,7 @@ use Psr\Log\LoggerInterface;
  * Class ConsoleObserver
  * @package SiteChecker
  */
-class ConsoleObserver implements SiteCheckObserver
+class ConsoleObserver implements SiteCheckObserverInterface
 {
 
     /**
